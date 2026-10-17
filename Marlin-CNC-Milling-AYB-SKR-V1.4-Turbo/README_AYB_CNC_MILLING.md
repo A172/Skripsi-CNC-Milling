@@ -1,0 +1,49 @@
+# Marlin CNC Milling AYB - SKR V1.4 Turbo
+
+Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR V1.4 Turbo (LPC1769) yang dipakai bersama AYB Interface ESP32-S3.
+
+## Target Hardware
+
+- Board: BTT SKR V1.4 Turbo
+- MCU: LPC1769
+- Firmware basis: Marlin 2.1.2.4
+- Fungsi mesin: CNC milling
+- Interface eksternal: ESP32-S3 AYB Interface melalui UART
+
+## Perubahan Penting
+
+- Mengaktifkan fitur spindle Marlin melalui `SPINDLE_FEATURE`.
+- Menggunakan command `M3` dan `M5` untuk kontrol spindle ON/OFF.
+- Output spindle memakai `SPINDLE_LASER_ENA_PIN P2_05`.
+- `SPINDLE_LASER_ACTIVE_STATE` diset `HIGH`.
+- PWM spindle tidak diaktifkan; output dipakai sebagai sinyal ON/OFF untuk relay atau modul kontrol spindle.
+- Mengaktifkan `M115_GEOMETRY_REPORT` agar AYB Interface dapat membaca area kerja mesin melalui command `M115`.
+- Konfigurasi ini disiapkan untuk integrasi monitoring dari interface, termasuk pembacaan feedrate, area kerja, soft endstop, dan sensor homing.
+
+## Catatan Integrasi AYB Interface
+
+AYB Interface ESP32-S3 membaca status Marlin dengan query non-gerak:
+
+- `M114` untuk posisi X/Y/Z.
+- `M203` untuk feedrate maksimum.
+- `M115` untuk geometry report area kerja.
+- `M119` untuk sensor homing/endstop.
+- `M211` untuk soft endstop.
+
+Command gerak dan spindle tetap harus diuji tanpa tool dan benda kerja terlebih dahulu. Kontrol spindle melalui `M3/M5` harus divalidasi terhadap wiring relay, driver, atau modul spindle yang dipakai.
+
+## File Konfigurasi Utama
+
+- `Marlin/Configuration.h`
+- `Marlin/Configuration_adv.h`
+- `platformio.ini`
+
+Nama file internal Marlin tersebut tidak diganti karena dibutuhkan oleh proses build Marlin.
+
+## Nama Release yang Disarankan
+
+Jika firmware binary diunggah ke GitHub Release, gunakan nama seperti:
+
+```text
+marlin-cnc-milling-ayb-skr-v1.4-turbo-2026-08-22.bin
+```

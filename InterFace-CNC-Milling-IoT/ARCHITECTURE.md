@@ -1,0 +1,193 @@
+# Architecture
+
+Dokumen ini menjelaskan arsitektur hardware dan software firmware ESP32-S3 CNC Interface.
+
+## Hardware Architecture
+
+```text
+                      +---------------------------+
+                      | ESP32-S3 DevKitM-1        |
+                      | AYB Interface Firmware    |
+                      +-------------+-------------+
+                                    |
+          +-------------------------+-------------------------+
+          |                         |                         |
+          v                         v                         v
+   +--------------+          +--------------+          +---------------+
+   | User         |          | Storage      |          | Network       |
+   | Interface    |          | MicroSD Card |          | WiFi + MQTT   |
+   +------+-------+          +--------------+          +-------+-------+
+          |                                                   |
+          |                                                   v
+          |                                           +---------------+
+          |                                           | Mosquitto /   |
+          |                                           | MQTT Explorer |
+          |                                           +---------------+
+          |
+          v
+   +----------------+
+   | LCD 128x64     |
+   | Rotary Encoder |
+   | Push Button    |
+   | Passive Buzzer |
+   +----------------+
+
+                                    |
+                                    | UART Serial1
+                                    v
+                      +---------------------------+
+                      | BTT SKR V1.4 Turbo        |
+                      | Marlin Firmware           |
+                      +-------------+-------------+
+                                    |
+                                    v
+                      +---------------------------+
+                      | DM542 Stepper Driver      |
+                      +-------------+-------------+
+                                    |
+                                    v
+                      +---------------------------+
+                      | NEMA23 Stepper Motor      |
+                      +---------------------------+
+```
+
+## Software Modules
+
+```text
+src/
+  app/
+    AppController.h/.cpp     -> orkestrator utama UI, input, output, storage, network, dan Marlin
+  assets/
+    Symbols.h/.cpp           -> aset bitmap/simbol LCD
+  config/
+    AppConfig.h              -> konfigurasi fitur, Marlin, UI, dan parameter mesin
+    MqttConfig.h             -> broker, autentikasi, topic, dan interval MQTT
+    PinConfig.h              -> mapping pin hardware
+  display/
+    LcdHandler.h/.cpp        -> render LCD 128x64
+    Menu.h/.cpp              -> wrapper tampilan menu/standby
+  input/
+    ButtonHandler.h/.cpp     -> pembacaan push button
+    EncoderHandler.h/.cpp    -> pembacaan rotary encoder
+  job/
+    GcodeJobController.h/.cpp -> analisis, estimasi, state, dan streaming G-code
+  network/
+    WifiPortal.h/.cpp        -> WiFiManager dan parameter MQTT
+    CloudMqtt.h/.cpp         -> MQTT monitoring lokal
+  output/
+    BuzzerHandler.h/.cpp     -> pola PWM buzzer non-blocking dan prioritas alarm
+  storage/
+    SdCardReader.h/.cpp      -> pembacaan SD card dan file job
+  time/
+    TimeManager.h/.cpp       -> sinkronisasi NTP dan waktu lokal WIB
+```
+
+## Main Runtime Flow
+
+```text
+main.cpp::setup()
+   |
+   +-- app.beginSerial()
+   +-- app.beginDisplay()
+   +-- app.beginInput() [jika toggle aktif]
+   +-- app.beginBuzzer() [jika toggle aktif]
+   +-- app.beginMarlinConnection() [jika toggle aktif]
+   +-- app.beginStorage() [jika toggle aktif]
+   +-- app.beginNetwork() [jika toggle aktif]
+
+loop()
+   |
+   v
+AppController::update()
+   |
+   +-- updateInput()
+   +-- updateAboutScreen()
+   +-- BuzzerHandler::update()
+   +-- updateMarlinCommunication()
+   +-- GcodeJobController::updateAnalysis()
+   +-- GcodeJobController::update()
+   +-- updateNetwork()
+   +-- updateStorageFileDisplay()
+```
+
+## Marlin Integration
+
+Komunikasi Marlin dikendalikan oleh `CNC_ENABLE_MARLIN_CONNECTION` di `main.cpp`. `AppController` membedakan kondisi `OFF`, `WAITING`, `DISCONNECTED`, `CONNECTED`, `LOST`, dan `ERROR`. Hanya status `CONNECTED` yang mengizinkan pengiriman perintah mesin; `LOST` dan `ERROR` mengaktifkan alarm.
+
+ESP32-S3 berkomunikasi dengan SKR V1.4 Turbo melalui UART `Serial1`.
+
+Fungsi utama:
+
+- Mengirim `M114` secara periodik.
+- Parse respons posisi `X`, `Y`, dan `Z`.
+- Menggunakan posisi Marlin untuk standby screen, Set Origin, dan MQTT `cnc/position`.
+- Menandai posisi tidak valid sampai respons `M114` diterima dan menampilkan `?` pada LCD/MQTT.
+- Mengirim alarm MQTT jika koneksi yang sebelumnya aktif menjadi `LOST` atau Marlin mengirim `ERROR`.
+- Menyerahkan UART kepada job sender selama state aktif agar respons `ok` tidak tercampur polling reguler.
+
+## Job Control
+
+`GcodeJobController` membuka file melalui `SdCardReader`, menganalisis sejumlah baris per loop, lalu membuka ulang file saat Start. Sender hanya memiliki satu command yang menunggu respons pada satu waktu.
+
+Alur state:
+
+```text
+IDLE -> ANALYZING -> READY -> STARTING -> RUNNING -> COMPLETING -> COMPLETED
+                                      +-> PAUSING -> PAUSED -> RUNNING
+                                      +-> STOPPING -> STOPPED
+                                      +-> ERROR
+```
+
+Progress dihitung dari posisi byte file yang sudah mendapat `ok`. Estimasi dihitung dari gerakan G0/G1, arc G2/G3 bidang XY, dan dwell G4. Controlled Stop menunggu command aktif selesai lalu mengirim `M5`; fungsi ini bukan emergency stop.
+
+## MQTT Lokal
+
+Topic publish utama:
+
+- `cnc/status`
+- `cnc/progress`
+- `cnc/error`
+- `cnc/position`
+- `cnc/machine`
+
+Topic subscribe receive-only:
+
+- `cnc/command`
+- `cnc/gcode`
+
+Topic monitoring kompatibilitas:
+
+- `cnc/network`
+- `cnc/time`
+- `cnc/alarm`
+
+Payload command dan G-code hanya dicetak ke Serial Monitor. Eksekusi ke UART Marlin dan upload file belum diaktifkan.
+
+Kontrak data dashboard:
+
+- `cnc/status`: status online/offline interface ESP32-S3.
+- `cnc/network`: SSID, alamat IP, dan status link MQTT.
+- `cnc/position`: posisi X/Y/Z, tampilan string, unit, validitas, dan sumber data.
+- `cnc/progress`: nama file terpilih, persentase progress, dan state proses.
+- `cnc/machine`: koneksi/state Marlin, activity job, spindle, soft endstop, feedrate XY/Z, dan home X/Y/Z.
+- `cnc/time`: status sinkronisasi, waktu, dan tanggal.
+- `cnc/alarm`: level dan pesan alarm Marlin.
+- `cnc/error`: flag error aktif dan pesan error.
+
+`AppController` membentuk `MqttMonitoringSnapshot` dari state runtime yang sudah tersedia. `CloudMqtt` hanya mengubah snapshot tersebut menjadi JSON dan mengatur interval/retained publish. Jika Marlin belum menyediakan data, payload memakai `UNKNOWN` atau `null`; data dummy posisi tetap dinonaktifkan secara default.
+
+## UI Workflow
+
+UI LCD dibagi menjadi:
+
+- Boot screen
+- Standby screen
+- Main menu
+- Select Job
+- Set Origin
+- Machine Ctrl&Status
+- Network
+- About dengan tiga halaman identitas berganti otomatis setiap 3 detik
+- Dialog konfirmasi
+
+Semua alur UI dikoordinasikan oleh `AppController`.

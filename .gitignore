@@ -1,0 +1,24 @@
+# Hasil build PlatformIO
+**/.pio/
+**/.cache/
+**/__pycache__/
+*.py[cod]
+
+# Konfigurasi editor dan sistem operasi lokal
+**/.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# File sementara dan log
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Berkas rahasia dan konfigurasi lokal
+.env
+.env.*
+!.env.example

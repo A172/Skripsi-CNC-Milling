@@ -1,0 +1,108 @@
+#include <Arduino.h>
+#include "app/AppController.h"
+
+// ============================================================
+// KONFIGURASI FITUR FIRMWARE
+// ============================================================
+// Cara pakai:
+// - Hilangkan tanda // untuk mengaktifkan fitur.
+// - Tambahkan tanda // untuk menonaktifkan fitur.
+//
+// Contoh:
+// #define CNC_ENABLE_NETWORK    -> WiFi/IoT aktif
+// // #define CNC_ENABLE_NETWORK -> WiFi/IoT nonaktif
+
+// Aktifkan pembacaan push button dan rotary encoder.
+#define CNC_ENABLE_INPUT
+
+// Aktifkan passive buzzer pada GPIO 38.
+#define CNC_ENABLE_BUZZER
+
+// Aktifkan komunikasi UART dan monitoring controller CNC berbasis Marlin.
+// Biarkan nonaktif selama SKR V1.4 Turbo belum tersambung.
+#define CNC_ENABLE_MARLIN_CONNECTION
+
+// Aktifkan modul SD card.
+#define CNC_ENABLE_SD_CARD
+
+// Aktifkan hanya saat SD card memang sedang diuji. Tes ini menulis file.
+// #define CNC_RUN_SD_CARD_DIAGNOSTICS
+
+// Tampilkan boot screen saja untuk pengujian LCD.
+// #define CNC_BOOT_SCREEN_ONLY
+
+// Mode sementara pengembangan WiFi/MQTT saat LCD bermasalah.
+// LCD dan input fisik dilewati, tetapi Serial, buzzer, SD, WiFi, dan MQTT tetap aktif.
+// #define CNC_HEADLESS_WIFI_MQTT_DEV
+
+
+
+// Aktifkan koneksi WiFi dan MQTT IoT.
+#define CNC_ENABLE_NETWORK
+
+
+AppController app;
+
+void setup() {
+  app.beginSerial();
+
+#if defined(CNC_HEADLESS_WIFI_MQTT_DEV)
+  app.setDisplayEnabled(false);
+  Serial.println("Mode headless WiFi/MQTT aktif: LCD dan input fisik dilewati");
+#endif
+
+#if defined(CNC_BOOT_SCREEN_ONLY)
+  app.beginDisplay(true);
+  Serial.println("Boot screen only mode aktif");
+  return;
+#else
+  app.beginDisplay();
+#endif
+
+#if defined(CNC_ENABLE_INPUT) && !defined(CNC_HEADLESS_WIFI_MQTT_DEV)
+  app.beginInput();
+#elif defined(CNC_HEADLESS_WIFI_MQTT_DEV)
+  Serial.println("Input tombol dan encoder dilewati pada mode headless");
+#else
+  Serial.println("Input tombol dan encoder nonatifkan");
+#endif
+
+#if defined(CNC_ENABLE_BUZZER)
+  app.beginBuzzer();
+#else
+  Serial.println("Buzzer nonaktif");
+#endif
+
+#if defined(CNC_ENABLE_MARLIN_CONNECTION)
+  app.beginMarlinConnection();
+#else
+  Serial.println("Koneksi CNC/Marlin nonaktif");
+#endif
+
+#if defined(CNC_ENABLE_SD_CARD)
+  app.beginStorage();
+
+  #if defined(CNC_RUN_SD_CARD_DIAGNOSTICS)
+    app.runSdCardDiagnostics();
+  #endif
+
+  // Contoh memilih file G-code dari SD card.
+  // Uncomment jika ingin menguji pemilihan file job.
+  // app.selectSdCardJobFile("/contoh.nc");
+  // app.printSelectedJobFile();
+
+#else
+  Serial.println("Storage SD nonaktifkan");
+#endif
+
+
+#if defined(CNC_ENABLE_NETWORK)
+  app.beginNetwork();
+#else
+  Serial.println("Network nonaktifkan");
+#endif
+}
+
+void loop() {
+  app.update();
+}

@@ -1,0 +1,527 @@
+#include "LcdHandler.h"
+#include <vector>
+
+#include "../config/AppConfig.h"
+#include "../config/PinConfig.h"
+#include "../assets/Symbols.h"
+
+namespace {
+  constexpr uint8_t LCD_MAX_CHARS = 21;
+  constexpr uint8_t LCD_ROW_HEIGHT = 10;
+
+  // Boot splash layout
+  constexpr uint8_t SPLASH_LOGO_W = Symbols::BootLogo::WIDTH;   // 40
+  constexpr uint8_t SPLASH_LOGO_H = Symbols::BootLogo::HEIGHT;  // 40
+  constexpr uint8_t SPLASH_LOGO_X = 3;
+  constexpr uint8_t SPLASH_LOGO_Y = 4;
+
+  int16_t centerX(U8G2_ST7920_128X64_F_SW_SPI *lcd, const String &text) {
+    int16_t width = lcd->getStrWidth(text.c_str());
+    int16_t x = (128 - width) / 2;
+    return x < 0 ? 0 : x;
+  }
+
+  int16_t centerX(U8G2_ST7920_128X64_F_SW_SPI *lcd, const char *text) {
+    int16_t width = lcd->getStrWidth(text);
+    int16_t x = (128 - width) / 2;
+    return x < 0 ? 0 : x;
+  }
+
+  String standbyTimeText(const char *timeStr) {
+    if (timeStr == nullptr) {
+      return String();
+    }
+
+    String text(timeStr);
+    text.trim();
+
+    int firstColon = text.indexOf(':');
+    if (firstColon >= 0) {
+      int secondColon = text.indexOf(':', firstColon + 1);
+      if (secondColon > 0) {
+        text = text.substring(0, secondColon);
+      }
+    }
+
+    return text;
+  }
+
+  void splitTextAtWord(
+    const String &text,
+    uint8_t maxChars,
+    String &first,
+    String &second
+  ) {
+    String trimmed = text;
+    trimmed.trim();
+
+    if (trimmed.length() <= maxChars) {
+      first = trimmed;
+      second = "";
+      return;
+    }
+
+    int split = maxChars;
+    while (split > 0 && trimmed.charAt(split) != ' ') {
+      split--;
+    }
+    if (split <= 0) {
+      split = maxChars;
+    }
+
+    first = trimmed.substring(0, split);
+    second = trimmed.substring(split);
+    first.trim();
+    second.trim();
+
+    if (second.length() > maxChars) {
+      if (maxChars > 3) {
+        second.remove(maxChars - 3);
+        second += "...";
+      } else {
+        second.remove(maxChars);
+      }
+    }
+  }
+
+}
+
+
+void LcdHandler::begin() {
+  if (_lcd == nullptr) {
+    // Mapping yang terdeteksi bekerja: gunakan urutan (E, RW, RS)
+    _lcd = new U8G2_ST7920_128X64_F_SW_SPI(
+      U8G2_R0,
+      PinConfig::LCD_E,
+      PinConfig::LCD_RW,
+      PinConfig::LCD_RS,
+      PinConfig::LCD_RST
+    );
+  }
+
+  Serial.println("LcdHandler: begin()");
+  // Pastikan pin-pin yang dipakai diset ke OUTPUT untuk diagnosa.
+  // Pada beberapa varian ESP32, beberapa GPIO adalah input-only -> jika pin
+  // tersebut dipakai maka layar akan tetap blank.
+  pinMode(PinConfig::LCD_E, OUTPUT);
+  pinMode(PinConfig::LCD_RS, OUTPUT);
+  pinMode(PinConfig::LCD_RW, OUTPUT);
+  pinMode(PinConfig::LCD_RST, OUTPUT);
+
+  // Toggle singkat untuk memastikan pin dapat di-drive (terlihat di scope/LED)
+  digitalWrite(PinConfig::LCD_RST, LOW);
+  delay(10);
+  digitalWrite(PinConfig::LCD_RST, HIGH);
+  delay(20);
+
+  _lcd->begin();
+  Serial.println("LcdHandler: u8g2 begin() completed");
+
+  // Coba toggle sinyal E agar bisa dideteksi alat ukur/LED; ini membantu
+  // mengetahui apakah pin yang dipilih benar (jika tidak ada toggle, besar
+  // kemungkinan pin input-only atau wiring salah).
+  digitalWrite(PinConfig::LCD_E, LOW);
+  delay(5);
+  digitalWrite(PinConfig::LCD_E, HIGH);
+  delay(5);
+  _lcd->setFont(u8g2_font_6x10_tf);
+  clear();
+}
+
+void LcdHandler::clear() {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  _lcd->clearBuffer();
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::drawText(uint8_t x, uint8_t y, const char *text, bool clearFirst) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  if (clearFirst) {
+    _lcd->clearBuffer();
+  }
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(x, y, text);
+}
+
+void LcdHandler::refresh() {
+  if (_lcd != nullptr) {
+    _lcd->sendBuffer();
+  }
+}
+
+void LcdHandler::showMessage(const char *title, const char *message) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(0, 10, fitText(title, LCD_MAX_CHARS).c_str());
+  _lcd->drawHLine(0, 13, 128);
+  _lcd->drawStr(0, 30, fitText(message, LCD_MAX_CHARS).c_str());
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showCenteredMessage(const char *title, const char *message) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  String titleLine = fitText(title, LCD_MAX_CHARS);
+  String messageLine = fitText(message, LCD_MAX_CHARS);
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(centerX(_lcd, titleLine), 28, titleLine.c_str());
+  _lcd->drawStr(centerX(_lcd, messageLine), 42, messageLine.c_str());
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showWifiSetup(const char *apName) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  String titleLine = "WiFi Setup";
+  String line1 = "Sambungkan WiFi";
+  String line2 = "dengan Nama:";
+  String apLine = fitText(apName, LCD_MAX_CHARS);
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(centerX(_lcd, titleLine), 10, titleLine.c_str());
+  _lcd->drawHLine(0, 13, 128);
+  _lcd->drawStr(centerX(_lcd, line1), 28, line1.c_str());
+  _lcd->drawStr(centerX(_lcd, line2), 40, line2.c_str());
+  _lcd->drawStr(centerX(_lcd, apLine), 58, apLine.c_str());
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showAbout(
+  const char *firmwareName,
+  const char *version,
+  const char *author,
+  const char *authorId,
+  const char *organization,
+  const char *lastUpdated,
+  uint8_t pageIndex
+) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  char versionLine[24];
+  char nimLine[24];
+  char pageCounter[8];
+  snprintf(versionLine, sizeof(versionLine), "Version %s", version);
+  snprintf(nimLine, sizeof(nimLine), "NIM: %s", authorId);
+  pageIndex %= AppConfig::ABOUT_PAGE_COUNT;
+  snprintf(
+    pageCounter,
+    sizeof(pageCounter),
+    "%u/%u",
+    pageIndex + 1,
+    AppConfig::ABOUT_PAGE_COUNT
+  );
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(128 - _lcd->getStrWidth(pageCounter), 10, pageCounter);
+
+  if (pageIndex == 0) {
+    if (Symbols::BootLogo::USE_CUSTOM_LOGO &&
+        Symbols::BootLogo::LOGO_BITMAP != nullptr) {
+      _lcd->drawXBMP(
+        (128 - Symbols::BootLogo::WIDTH) / 2,
+        0,
+        Symbols::BootLogo::WIDTH,
+        Symbols::BootLogo::HEIGHT,
+        Symbols::BootLogo::LOGO_BITMAP
+      );
+    } else {
+      _lcd->drawFrame(
+        (128 - Symbols::BootLogo::WIDTH) / 2,
+        0,
+        Symbols::BootLogo::WIDTH,
+        Symbols::BootLogo::HEIGHT
+      );
+    }
+    _lcd->drawHLine(0, 41, 128);
+    _lcd->drawStr(centerX(_lcd, firmwareName), 52, firmwareName);
+    _lcd->drawStr(centerX(_lcd, versionLine), 63, versionLine);
+  } else if (pageIndex == 1) {
+    String orgLine1;
+    String orgLine2;
+    String organizationText = organization != nullptr ? String(organization) : String();
+    splitTextAtWord(organizationText, LCD_MAX_CHARS, orgLine1, orgLine2);
+
+    _lcd->drawStr(centerX(_lcd, "PEMBUAT"), 10, "PEMBUAT");
+    _lcd->drawHLine(0, 13, 128);
+    _lcd->drawStr(centerX(_lcd, author), 25, author);
+    _lcd->drawStr(centerX(_lcd, nimLine), 37, nimLine);
+    _lcd->drawStr(centerX(_lcd, orgLine1), 50, orgLine1.c_str());
+    if (orgLine2.length() > 0) {
+      _lcd->drawStr(centerX(_lcd, orgLine2), 62, orgLine2.c_str());
+    }
+  } else {
+    _lcd->drawStr(centerX(_lcd, "FIRMWARE INFO"), 11, "FIRMWARE INFO");
+    _lcd->drawHLine(0, 14, 128);
+    _lcd->drawStr(centerX(_lcd, "Update terakhir:"), 31, "Update terakhir:");
+    _lcd->drawStr(centerX(_lcd, lastUpdated), 46, lastUpdated);
+    _lcd->drawStr(centerX(_lcd, versionLine), 62, versionLine);
+  }
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showStandbyLines(const char *top, const char *middle, const char *bottom, const char *eta, const char *jobName, int progress, const char *timeStr, const char *networkStatus) {
+  if (_lcd == nullptr) return;
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+
+  // Baris 1: Status & Jam
+  _lcd->drawStr(0, 9, fitText(top, 15).c_str());
+  if (timeStr != nullptr) {
+    String timeLine = standbyTimeText(timeStr);
+    int16_t timeX = 128 - (_lcd->getStrWidth(timeLine.c_str()));
+    _lcd->drawStr(timeX, 9, timeLine.c_str());
+  }
+  _lcd->drawHLine(0, 11, 128);
+
+  // Baris 2: Koordinat X & Y
+  _lcd->drawStr(0, 22, middle);
+
+  // Baris 3: Koordinat Z & Progress Bar
+  _lcd->drawStr(0, 32, bottom);
+
+  if (progress >= 0) {
+    // Gambar Bar Progres di sisi kanan koordinat Z
+    uint8_t pct = (progress > 100) ? 100 : (progress < 0 ? 0 : progress);
+    _lcd->drawFrame(65, 26, 35, 6);             // Bingkai bar (lebar 35px agar muat)
+    _lcd->drawBox(67, 28, (pct * 31) / 100, 2); // Isi bar
+
+    // Teks Persenan di pojok kanan
+    char pStr[8];
+    snprintf(pStr, sizeof(pStr), "%d%%", pct);
+    _lcd->drawStr(104, 32, pStr);
+  }
+
+  // Baris jaringan memakai lebar penuh agar label lengkap tetap memakai font 6x10.
+  if (networkStatus != nullptr && strlen(networkStatus) > 0) {
+    _lcd->drawStr(centerX(_lcd, networkStatus), 42, networkStatus);
+  }
+
+  // Baris 5-6: Status job dan estimasi waktu kerja.
+  if (jobName != nullptr && strlen(jobName) > 0) {
+    _lcd->drawHLine(0, 45, 128);
+    _lcd->drawStr(0, 54, fitText(jobName, LCD_MAX_CHARS).c_str());
+
+    if (eta != nullptr && strlen(eta) > 0) {
+      String estimateLine = "Estimasi: ";
+      estimateLine += eta;
+      _lcd->drawStr(0, 63, fitText(estimateLine, LCD_MAX_CHARS).c_str());
+    }
+  } else if (eta != nullptr && strlen(eta) > 0) {
+    String estimateLine = "Estimasi: ";
+    estimateLine += eta;
+    _lcd->drawStr(0, 63, fitText(estimateLine, LCD_MAX_CHARS).c_str());
+  } else {
+    // Posisi Zzz tetap sesuai perbaikan manual Anda
+    _lcd->setFont(u8g2_font_ncenB14_tr);
+    _lcd->drawStr(50, 63, "Zzz");
+    _lcd->setFont(u8g2_font_6x10_tf);
+  }
+
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showBootSplash(
+  const char *title,
+  const char *subtitle,
+  const char *footer,
+  uint16_t durationMs
+) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+
+  // Logo area (40x40). Placeholder dulu jika USE_CUSTOM_LOGO = false.
+  if (Symbols::BootLogo::USE_CUSTOM_LOGO && Symbols::BootLogo::LOGO_BITMAP != nullptr) {
+    _lcd->drawXBMP(SPLASH_LOGO_X, SPLASH_LOGO_Y, SPLASH_LOGO_W, SPLASH_LOGO_H, Symbols::BootLogo::LOGO_BITMAP);
+  } else {
+    // Kotak placeholder
+    _lcd->drawFrame(SPLASH_LOGO_X, SPLASH_LOGO_Y, SPLASH_LOGO_W, SPLASH_LOGO_H);
+    // Label teks di dalam area
+    _lcd->drawStr(SPLASH_LOGO_X + 7, SPLASH_LOGO_Y + 24, "LOGO");
+  }
+
+  _lcd->drawStr(49, 16, fitText(title, 13).c_str());
+  _lcd->drawStr(49, 29, fitText(subtitle, 13).c_str());
+  _lcd->drawStr(49, 42, fitText(footer, 13).c_str());
+  _lcd->drawHLine(0, 49, 128);
+  _lcd->drawStr(31, 62, "Starting system");
+
+  _lcd->sendBuffer();
+
+  if (durationMs > 0) {
+    delay(durationMs);
+  }
+
+  // Jangan clear otomatis di sini.
+  // Biarkan caller (AppController / update loop) yang memutuskan kapan tampilan
+  // berikutnya digambar, agar tidak menyebabkan layar tetap blank.
+}
+
+
+
+void LcdHandler::showList(const char *title, const std::vector<String> &items, size_t offset) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(0, 9, fitText(title, LCD_MAX_CHARS).c_str());
+  _lcd->drawHLine(0, 12, 128);
+
+  if (items.empty()) {
+    _lcd->drawStr(0, 31, "Tidak ada file");
+    _lcd->sendBuffer();
+    return;
+  }
+
+  for (uint8_t row = 0; row < 5; row++) {
+    size_t itemIndex = offset + row;
+    if (itemIndex >= items.size()) {
+      break;
+    }
+
+    _lcd->drawStr(0, 22 + (row * LCD_ROW_HEIGHT), fitText(items[itemIndex], LCD_MAX_CHARS).c_str());
+  }
+
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showIpEditor(const char *title, const char *ipText, uint8_t digitIndex) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  if (digitIndex > 11) {
+    digitIndex = 11;
+  }
+
+  const uint8_t ipX = 19;
+  const uint8_t ipY = 34;
+  const uint8_t charWidth = 6;
+  uint8_t charIndex = digitIndex + (digitIndex / 3);
+  uint8_t cursorX = ipX + (charIndex * charWidth);
+  char activeDigit[2] = {ipText[charIndex], '\0'};
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(0, 9, fitText(title, LCD_MAX_CHARS).c_str());
+  _lcd->drawHLine(0, 12, 128);
+  _lcd->drawStr(0, 23, "Rotary pilih angka");
+  _lcd->drawStr(ipX, ipY, ipText);
+  _lcd->drawBox(cursorX - 1, ipY - 9, charWidth + 2, 11);
+  _lcd->setDrawColor(0);
+  _lcd->drawStr(cursorX, ipY, activeDigit);
+  _lcd->setDrawColor(1);
+  _lcd->drawStr(0, 50, "ENT/Klik: kanan");
+  _lcd->drawStr(0, 62, "BACK: kiri/batal");
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showMenu(const char *title, const std::vector<String> &items, size_t selected, size_t offset) {
+  if (_lcd == nullptr) {
+    return;
+  }
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(0, 9, fitText(title, LCD_MAX_CHARS).c_str());
+  _lcd->drawHLine(0, 12, 128);
+
+  uint8_t baselineY = 22;
+  for (uint8_t row = 0; row < 5; row++) {
+    size_t itemIndex = offset + row;
+    if (itemIndex >= items.size()) {
+      break;
+    }
+
+    if (baselineY > 62) {
+      break;
+    }
+
+    if (itemIndex == selected) {
+      // Inverse highlight: draw filled box then render text in draw color 0
+      int boxTop = (int)baselineY - 8; // adjust so box covers text height
+      if (boxTop < 0) boxTop = 0;
+      _lcd->drawBox(0, boxTop, 128, LCD_ROW_HEIGHT);
+      // Draw text in color 0 to appear as inverted
+      _lcd->setDrawColor(0);
+      _lcd->drawStr(2, baselineY, fitText(items[itemIndex], LCD_MAX_CHARS - 1).c_str());
+      // Restore draw color
+      _lcd->setDrawColor(1);
+    } else {
+      _lcd->drawStr(10, baselineY, fitText(items[itemIndex], LCD_MAX_CHARS - 1).c_str());
+    }
+
+    baselineY += LCD_ROW_HEIGHT;
+  }
+
+  _lcd->sendBuffer();
+}
+
+void LcdHandler::showConfirm(const char *title, const char *message, size_t selectedIndex) {
+  if (_lcd == nullptr) return;
+
+  _lcd->clearBuffer();
+  _lcd->setFont(u8g2_font_6x10_tf);
+  _lcd->drawStr(0, 10, fitText(title, LCD_MAX_CHARS).c_str());
+  _lcd->drawHLine(0, 13, 128);
+
+  _lcd->drawStr(0, 30, fitText(message, LCD_MAX_CHARS).c_str());
+
+  // Draw choices
+  const char *yes = "Yes";
+  const char *no = "No";
+  // left choice
+  if (selectedIndex == 0) {
+    _lcd->drawBox(0, 45, 60, 14);
+    _lcd->setDrawColor(0);
+    _lcd->drawStr(8, 56, yes);
+    _lcd->setDrawColor(1);
+    _lcd->drawStr(70, 56, no);
+  } else {
+    _lcd->drawStr(8, 56, yes);
+    _lcd->drawBox(60, 45, 68, 14);
+    _lcd->setDrawColor(0);
+    _lcd->drawStr(76, 56, no);
+    _lcd->setDrawColor(1);
+  }
+
+  _lcd->sendBuffer();
+}
+
+String LcdHandler::fitText(const String &text, uint8_t maxChars) const {
+  if (text.length() <= maxChars) {
+    return text;
+  }
+
+  if (maxChars <= 1) {
+    return text.substring(0, maxChars);
+  }
+
+  return text.substring(0, maxChars - 1) + "~";
+}
