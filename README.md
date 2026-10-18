@@ -2,6 +2,8 @@
 
 Repository utama proyek akhir CNC milling berbasis firmware Marlin pada board BTT SKR V1.4 Turbo (LPC1769) dan antarmuka ESP32-S3.
 
+Repository GitHub Public: <https://github.com/A172/Skripsi-CNC-Milling>
+
 ## Struktur Repository
 
 | Folder | Fungsi |

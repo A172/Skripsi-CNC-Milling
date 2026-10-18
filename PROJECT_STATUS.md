@@ -11,12 +11,12 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 - Aturan ignore untuk cache, hasil build, file editor lokal, dan file sementara.
 - Dokumentasi tingkat repository mengenai struktur, build, dan batasan keselamatan.
 - Repository Git lokal pada branch `main` dan staging commit awal.
+- Repository GitHub Public tersedia di `https://github.com/A172/Skripsi-CNC-Milling`.
 
 Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/PROJECT_STATUS.md`.
 
 ## Fitur yang Sedang Dikerjakan
 
-- Pembuatan repository GitHub dan upload repository lokal.
 - Validasi integrasi interface ESP32-S3 dengan Marlin pada hardware CNC.
 
 ## Daftar Bug yang Masih Ada
@@ -28,9 +28,8 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 
 ## TODO Prioritas Berikutnya
 
-1. Buat repository GitHub `Skripsi-CNC-Milling` dan push branch `main`.
-2. Tinjau warning Marlin berdasarkan konfigurasi feedback dan wiring pin DIAG aktual.
-3. Lanjutkan validasi komunikasi UART dan pengujian hardware sesuai prosedur keselamatan.
+1. Tinjau warning Marlin berdasarkan konfigurasi feedback dan wiring pin DIAG aktual.
+2. Lanjutkan validasi komunikasi UART dan pengujian hardware sesuai prosedur keselamatan.
 
 ## Hasil Verifikasi Build
 

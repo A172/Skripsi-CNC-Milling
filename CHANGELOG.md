@@ -22,3 +22,4 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Source code firmware dan konfigurasi hardware tidak diubah pada proses penggabungan ini.
 - Build interface ESP32-S3 environment `esp32-s3-devkitm-1` berhasil.
 - Build Marlin environment `LPC1769` berhasil dengan warning konfigurasi yang sudah ada.
+- Repository telah dipublikasikan ke `https://github.com/A172/Skripsi-CNC-Milling`.
