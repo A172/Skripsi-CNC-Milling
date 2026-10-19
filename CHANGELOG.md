@@ -26,6 +26,9 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Mengaktifkan `HOME_Z_FIRST` dan menonaktifkan `Z_SAFE_HOMING` agar `G28` penuh melakukan homing Z ke proximity atas sebelum X/Y bergerak.
 - Mendokumentasikan bahwa homing parsial `G28 X` atau `G28 Y` tidak otomatis melakukan homing Z.
 - Menegaskan bahwa `HOME_Z_FIRST` tidak mengatur parkir setelah job; workflow spindle OFF dan parkir aman tetap harus dibuat terpisah.
+- Mengubah steps/mm X dari `20.57` menjadi `20.38` berdasarkan tiga pengujian perpindahan 500 mm pada feedrate 300 mm/menit.
+- Mencatat validasi hardware steps/mm Y `18.86` pada 500 mm dan Z `400` pada 50 mm, masing-masing tiga kali tanpa selisih yang terlihat pada resolusi meteran.
+- Memperbarui status homing penuh dari belum diuji menjadi berhasil diuji pada hardware.
 
 ### Notes
 

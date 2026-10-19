@@ -38,6 +38,8 @@ Konfigurasi aktual mengarahkan homing Z ke proximity Z-Max di bagian atas. Berda
 
 Pengaturan tersebut hanya berlaku saat homing dan tidak otomatis memarkir spindle setelah job selesai. Prosedur akhir job yang mematikan spindle lalu memindahkan Z ke posisi aman harus dirancang dan diuji sebagai workflow terpisah.
 
+Kalibrasi gerak hardware pada feedrate rendah menetapkan steps/mm X `20.38`, Y `18.86`, dan Z `400`. X dan Y diuji tiga kali pada perpindahan 500 mm, sedangkan Z diuji tiga kali pada perpindahan 50 mm. Semua hasil sesuai jarak perintah dan kembali ke titik ukur awal pada resolusi meteran yang digunakan. Akurasi pada feedrate lebih tinggi masih harus diuji sebelum digunakan untuk proses milling.
+
 ## Post-processor Fusion 360
 
 Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/README.md`. Periksa kembali seluruh G-code hasil post-processing sebelum dijalankan pada mesin.
