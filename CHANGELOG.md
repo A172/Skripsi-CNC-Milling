@@ -21,6 +21,8 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 - Mengubah `INVERT_Z_DIR` dari `true` menjadi `false` agar homing Z bergerak naik menuju proximity Z-Max sesuai `Z_HOME_DIR 1`.
 - Menambahkan prosedur validasi `M119`, jog Z jarak kecil, dan pengujian homing aman pada dokumentasi.
+- Mengoreksi `INVERT_Z_DIR` kembali menjadi `true` setelah uji hardware menunjukkan perintah Z negatif justru menggerakkan spindle naik. `Z_HOME_DIR 1` dan input proximity Z-Max tidak diubah.
+- Memperjelas prosedur uji arah: Z negatif harus turun dan Z positif harus naik sebelum menjalankan `G28 Z`.
 
 ### Notes
 

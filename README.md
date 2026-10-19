@@ -32,7 +32,7 @@ cd Marlin-CNC-Milling-AYB-SKR-V1.4-Turbo
 
 Environment build yang aktif mengikuti `default_envs` pada `platformio.ini` Marlin. Konfigurasi keselamatan, pin, homing, origin, soft endstop, dan spindle tidak boleh diubah tanpa pemeriksaan wiring dan persetujuan yang jelas.
 
-Konfigurasi aktual mengarahkan homing Z ke proximity Z-Max di bagian atas. `INVERT_Z_DIR false` digunakan agar arah positif Z bergerak naik; sebelum `G28 Z`, validasi `M119` harus menunjukkan `open` saat sensor bebas dan `TRIGGERED` saat mendeteksi logam.
+Konfigurasi aktual mengarahkan homing Z ke proximity Z-Max di bagian atas. Berdasarkan uji hardware yang menunjukkan perintah Z negatif sebelumnya menggerakkan spindle naik, `INVERT_Z_DIR true` digunakan agar arah positif Z bergerak naik. Sebelum `G28 Z`, validasi `M119` harus menunjukkan `open` saat sensor bebas dan `TRIGGERED` saat mendeteksi logam, kemudian pastikan jog Z negatif turun dan Z positif naik.
 
 ## Post-processor Fusion 360
 
