@@ -55,6 +55,32 @@ Job: First Line #|First sequence number.|**1**|
 Job: Line # Increment|Sequence number increment.|**10**|
 Job: Include Whitespace|Includes whitespace seperation between text.|**true**|
 Job: At end go to 0,0|Go to X0 Y0 at gcode end, Z remains unchanged.|**true**|
+Job: Safe park on finish|For a normally completed Marlin milling job, stop the spindle, run `G28`, then move to the validated park position.|**true**|
+Job: Safe park X|Validated machine-coordinate park position X (mm).|**1250**|
+Job: Safe park Y|Validated machine-coordinate park position Y (mm).|**100**|
+Job: Safe park Z|Validated machine-coordinate park position Z (mm).|**-20**|
+Job: Safe park feed X/Y|Feedrate used for the X/Y park move (mm/min).|**3000**|
+Job: Safe park feed Z|Feedrate used for the Z park move (mm/min).|**600**|
+
+### AYB CNC safe park sequence
+
+For a normally completed milling job using Marlin, `Job: Safe park on finish` emits this footer:
+
+```G-code
+M400
+M5
+G90
+G28
+G0 X1250 Y100 F3000
+G0 Z-20 F600
+M400
+```
+
+`G28` uses the Marlin configuration that homes Z first and then X/Y. It also clears the `G92` position shift so the park target is interpreted in machine coordinates. The X/Y move is emitted before the final Z descent to avoid diagonal travel into the park position.
+
+When `Job: Manual Spindle On/Off` is enabled, the post-processor also inserts a user-confirmation pause after `M5` and before `G28`. Keep this enabled until automatic relay control by `M3/M5` has been verified on the hardware; disable it only when the spindle is confirmed to stop reliably from `M5`.
+
+This built-in sequence is skipped for laser/jet jobs, non-Marlin firmware, jobs using `Extern: Stop File`, emergency stops, and jobs aborted before the footer is reached. `Job: At end go to 0,0` remains as the fallback behavior when safe park is not applicable. Always inspect the generated footer and validate it without a tool or workpiece before production use.
 
 ## Group 2: Travel Speed and Feedrate Scaling Properties
 Use these properties to set the speed used for G0 Rapids and to scale the feedrate used

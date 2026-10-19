@@ -34,6 +34,10 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Meningkatkan `HOMING_FEEDRATE_MM_M` dari X/Y/Z `1200/1200/240` menjadi `3000/3000/600` mm/menit agar proses homing lebih cepat.
 - Mengubah `HOMING_BUMP_DIVISOR` dari `{ 4, 4, 1 }` menjadi `{ 4, 4, 4 }`, sehingga pendekatan kedua Z dilakukan lebih pelan pada `150` mm/menit.
 - Menambahkan prosedur validasi hardware untuk kecepatan homing baru pada dokumentasi.
+- Mencatat hasil uji hardware bahwa feedrate homing baru bergerak lebih cepat dan halus serta `G28` penuh tetap menjalankan Z sebelum X/Y.
+- Menambahkan opsi post-processor `Job: Safe park on finish` untuk job milling Marlin yang selesai normal.
+- Menetapkan posisi parkir hardware tervalidasi X `1250`, Y `100`, Z `-20`, dengan feedrate parkir X/Y `3000` dan Z `600` mm/menit.
+- Menghasilkan footer aman berurutan `M400`, `M5`, konfirmasi operator bila kontrol spindle manual aktif, `G90`, `G28`, gerakan X/Y, gerakan Z, lalu `M400`; parkir tidak dijalankan untuk laser/jet, firmware non-Marlin, file stop eksternal, atau job yang tidak mencapai footer.
 
 ### Notes
 

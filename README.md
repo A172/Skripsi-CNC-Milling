@@ -48,6 +48,8 @@ Feedrate homing menggunakan X/Y `3000` mm/menit dan Z `600` mm/menit. Pendekatan
 
 Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/README.md`. Periksa kembali seluruh G-code hasil post-processing sebelum dijalankan pada mesin.
 
+Post-processor Marlin untuk job milling sekarang menambahkan parkir otomatis hanya pada penyelesaian normal. Footer menunggu planner selesai, memastikan spindle OFF, menjalankan `G28` dengan Z lebih dahulu, lalu bergerak ke posisi parkir yang sudah divalidasi pada hardware: X `1250`, Y `100`, Z `-20`. Gerakan masuk parkir memakai XY `3000` mm/menit dan Z `600` mm/menit. Jika kontrol spindle manual aktif, terdapat konfirmasi operator setelah `M5` sebelum homing dimulai. Fitur dapat dinonaktifkan melalui properti `Job: Safe park on finish` dan tidak dijalankan pada emergency stop, job yang dibatalkan, laser/jet, firmware non-Marlin, atau saat `Extern: Stop File` digunakan.
+
 ## Keselamatan
 
 - Pemilihan file atau upload G-code tidak boleh otomatis menjalankan mesin.

@@ -80,6 +80,12 @@ properties = {
   job7_SequenceNumberIncrement: 1,       // increment for sequence numbers
   job8_SeparateWordsWithSpace: true,     // specifies that the words should be separated with a white space 
   job9_GoOriginOnFinish: true,           // Go X0 Y0 current Z at end
+  jobA_SafeParkOnFinish: true,           // Marlin milling: home and move to the validated machine park position
+  jobB_SafeParkX: 1250,                  // Validated machine park X (mm)
+  jobC_SafeParkY: 100,                   // Validated machine park Y (mm)
+  jobD_SafeParkZ: -20,                   // Validated machine park Z (mm)
+  jobE_SafeParkFeedXY: 3000,             // Safe park XY feedrate (mm/min)
+  jobF_SafeParkFeedZ: 600,               // Safe park Z feedrate (mm/min)
 
   fr0_TravelSpeedXY: 2500,             // High speed for travel movements X & Y (mm/min)
   fr1_TravelSpeedZ: 300,               // High speed for travel movements Z (mm/min)
@@ -189,6 +195,30 @@ propertyDefinitions = {
   job9_GoOriginOnFinish: {
     title: "Job: At end go to 0,0", description: "Go to X0 Y0 at gcode end, Z remains unchanged", group: 1,
     type: "boolean", default_mm: true, default_in: true
+  },
+  jobA_SafeParkOnFinish: {
+    title: "Job: Safe park on finish", description: "For a normally completed Marlin milling job: stop spindle, home Z then XY, and move to the validated machine park position", group: 1,
+    type: "boolean", default_mm: true, default_in: true
+  },
+  jobB_SafeParkX: {
+    title: "Job: Safe park X", description: "Validated machine-coordinate X park position (mm)", group: 1,
+    type: "spatial", default_mm: 1250, default_in: 1250
+  },
+  jobC_SafeParkY: {
+    title: "Job: Safe park Y", description: "Validated machine-coordinate Y park position (mm)", group: 1,
+    type: "spatial", default_mm: 100, default_in: 100
+  },
+  jobD_SafeParkZ: {
+    title: "Job: Safe park Z", description: "Validated machine-coordinate Z park position (mm)", group: 1,
+    type: "spatial", default_mm: -20, default_in: -20
+  },
+  jobE_SafeParkFeedXY: {
+    title: "Job: Safe park feed X/Y", description: "XY feedrate used to enter the park position (mm/min)", group: 1,
+    type: "spatial", default_mm: 3000, default_in: 3000
+  },
+  jobF_SafeParkFeedZ: {
+    title: "Job: Safe park feed Z", description: "Z feedrate used to enter the park position (mm/min)", group: 1,
+    type: "spatial", default_mm: 600, default_in: 600
   },
   
   fr0_TravelSpeedXY: {
@@ -878,6 +908,42 @@ function onOpen() {
   parseSafeZProperty();
 }
 
+// Write the machine-coordinate park sequence validated for the AYB CNC.
+// G28 resets the G92 position shift before the absolute park moves.
+function safeParkOnFinish() {
+  writeComment(eComment.Important, " --- Safe Park Start ---");
+
+  // Always issue M5 before any automatic homing or park motion.
+  writeBlock(mFormat.format(5));
+  this.spindleEnabled = false;
+  currentSpindleSpeed = 0;
+
+  if (properties.job2_ManualSpindlePowerControl) {
+    askUser("Confirm spindle is OFF", "Spindle", false);
+  }
+
+  gAbsIncModal.reset();
+  writeBlock(gAbsIncModal.format(90));
+  writeBlock(gFormat.format(28));
+
+  resetAll();
+  gMotionModal.reset();
+  writeBlock(
+    gMotionModal.format(0),
+    xFormat.format(propertyMmToUnit(properties.jobB_SafeParkX)),
+    yFormat.format(propertyMmToUnit(properties.jobC_SafeParkY)),
+    fFormat.format(propertyMmToUnit(properties.jobE_SafeParkFeedXY))
+  );
+  writeBlock(
+    gMotionModal.format(0),
+    zFormat.format(propertyMmToUnit(properties.jobD_SafeParkZ)),
+    fFormat.format(propertyMmToUnit(properties.jobF_SafeParkFeedZ))
+  );
+  writeBlock(mFormat.format(400));
+
+  writeComment(eComment.Important, " --- Safe Park End ---");
+}
+
 // Called at end of gcode file
 function onClose() {
   writeComment(eComment.Important, " *** STOP begin ***");
@@ -886,10 +952,15 @@ function onClose() {
 
   if (properties.gcodeStopFile == "") {
     onCommand(COMMAND_COOLANT_OFF);
-    if (properties.job9_GoOriginOnFinish) {
-      rapidMovementsXY(0, 0);
+
+    if (fw == eFirmware.MARLIN && machineMode == TYPE_MILLING && properties.jobA_SafeParkOnFinish) {
+      safeParkOnFinish();
+    } else {
+      onCommand(COMMAND_STOP_SPINDLE);
+      if (properties.job9_GoOriginOnFinish) {
+        rapidMovementsXY(0, 0);
+      }
     }
-    onCommand(COMMAND_STOP_SPINDLE);
 
     end(true);  
     

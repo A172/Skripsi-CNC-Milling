@@ -27,7 +27,7 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 
 Status proximity Z-Max wajib menunjukkan `open` saat bebas dan `TRIGGERED` saat mendeteksi logam melalui `M119`. Setelah firmware baru dipasang, lakukan jog Z jarak kecil dari tengah lintasan: Z negatif harus turun dan Z positif harus naik. Jalankan `G28 Z` hanya setelah arah jog benar, kemudian uji `G28` penuh tanpa tool dan benda kerja. Perintah `G28 X` atau `G28 Y` saja tidak menjalankan homing Z terlebih dahulu.
 
-Kecepatan homing yang baru sudah lolos build, tetapi masih harus diuji pada hardware. Siapkan emergency stop, lepaskan tool dan benda kerja, uji `G28 Z` terlebih dahulu, lalu uji `G28` penuh. Hentikan pengujian jika sensor terlambat memicu, sumbu melewati sensor, terjadi benturan, atau motor kehilangan langkah.
+Kecepatan homing baru sudah diuji pada hardware. Z bergerak naik lebih cepat dan halus, proximity menghentikan homing dengan benar, pendekatan kedua berjalan lebih lambat, dan `G28` penuh tetap menyelesaikan Z sebelum X/Y. Tetap siapkan emergency stop dan hentikan mesin jika sensor terlambat memicu, sumbu melewati sensor, terjadi benturan, atau motor kehilangan langkah.
 
 `HOME_Z_FIRST` hanya mengatur urutan saat command homing dijalankan. Fitur ini tidak otomatis menaikkan Z atau memarkir spindle setelah pekerjaan selesai; workflow akhir pekerjaan harus diatur terpisah dan wajib mematikan spindle sebelum gerakan parkir.
 
