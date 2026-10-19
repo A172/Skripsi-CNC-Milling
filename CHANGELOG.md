@@ -31,6 +31,9 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Memperbarui status homing penuh dari belum diuji menjadi berhasil diuji pada hardware.
 - Mengoreksi `DEFAULT_MAX_FEEDRATE` dari X/Y/Z `1700/1700/240` mm/detik menjadi `200/280/39` mm/detik berdasarkan margin sekitar 80% hasil uji travel tanpa kehilangan langkah.
 - Mendokumentasikan hasil maksimum pengujian tanpa beban: F15000 pada X, F21000 pada Y, dan F2940 pada Z.
+- Meningkatkan `HOMING_FEEDRATE_MM_M` dari X/Y/Z `1200/1200/240` menjadi `3000/3000/600` mm/menit agar proses homing lebih cepat.
+- Mengubah `HOMING_BUMP_DIVISOR` dari `{ 4, 4, 1 }` menjadi `{ 4, 4, 4 }`, sehingga pendekatan kedua Z dilakukan lebih pelan pada `150` mm/menit.
+- Menambahkan prosedur validasi hardware untuk kecepatan homing baru pada dokumentasi.
 
 ### Notes
 
