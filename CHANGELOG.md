@@ -23,6 +23,9 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Menambahkan prosedur validasi `M119`, jog Z jarak kecil, dan pengujian homing aman pada dokumentasi.
 - Mengoreksi `INVERT_Z_DIR` kembali menjadi `true` setelah uji hardware menunjukkan perintah Z negatif justru menggerakkan spindle naik. `Z_HOME_DIR 1` dan input proximity Z-Max tidak diubah.
 - Memperjelas prosedur uji arah: Z negatif harus turun dan Z positif harus naik sebelum menjalankan `G28 Z`.
+- Mengaktifkan `HOME_Z_FIRST` dan menonaktifkan `Z_SAFE_HOMING` agar `G28` penuh melakukan homing Z ke proximity atas sebelum X/Y bergerak.
+- Mendokumentasikan bahwa homing parsial `G28 X` atau `G28 Y` tidak otomatis melakukan homing Z.
+- Menegaskan bahwa `HOME_Z_FIRST` tidak mengatur parkir setelah job; workflow spindle OFF dan parkir aman tetap harus dibuat terpisah.
 
 ### Notes
 

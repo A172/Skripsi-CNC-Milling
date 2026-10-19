@@ -34,6 +34,10 @@ Environment build yang aktif mengikuti `default_envs` pada `platformio.ini` Marl
 
 Konfigurasi aktual mengarahkan homing Z ke proximity Z-Max di bagian atas. Berdasarkan uji hardware yang menunjukkan perintah Z negatif sebelumnya menggerakkan spindle naik, `INVERT_Z_DIR true` digunakan agar arah positif Z bergerak naik. Sebelum `G28 Z`, validasi `M119` harus menunjukkan `open` saat sensor bebas dan `TRIGGERED` saat mendeteksi logam, kemudian pastikan jog Z negatif turun dan Z positif naik.
 
+`HOME_Z_FIRST` diaktifkan dan `Z_SAFE_HOMING` dinonaktifkan karena mesin menggunakan proximity Z-Max sebagai endstop nyata. Dengan konfigurasi ini, `G28` penuh melakukan homing Z ke atas terlebih dahulu, kemudian X dan Y. Perintah parsial seperti `G28 X` atau `G28 Y` tetap hanya melakukan homing pada sumbu yang diminta.
+
+Pengaturan tersebut hanya berlaku saat homing dan tidak otomatis memarkir spindle setelah job selesai. Prosedur akhir job yang mematikan spindle lalu memindahkan Z ke posisi aman harus dirancang dan diuji sebagai workflow terpisah.
+
 ## Post-processor Fusion 360
 
 Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/README.md`. Periksa kembali seluruh G-code hasil post-processing sebelum dijalankan pada mesin.
