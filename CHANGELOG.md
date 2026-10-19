@@ -17,6 +17,11 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Metadata repository Git yang ikut tersalin dari proyek interface.
 - Cache build PlatformIO dan cache Python dari salinan proyek.
 
+### Changed
+
+- Mengubah `INVERT_Z_DIR` dari `true` menjadi `false` agar homing Z bergerak naik menuju proximity Z-Max sesuai `Z_HOME_DIR 1`.
+- Menambahkan prosedur validasi `M119`, jog Z jarak kecil, dan pengujian homing aman pada dokumentasi.
+
 ### Notes
 
 - Source code firmware dan konfigurasi hardware tidak diubah pada proses penggabungan ini.

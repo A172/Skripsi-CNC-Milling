@@ -19,6 +19,9 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 - PWM spindle tidak diaktifkan; output dipakai sebagai sinyal ON/OFF untuk relay atau modul kontrol spindle.
 - Mengaktifkan `M115_GEOMETRY_REPORT` agar AYB Interface dapat membaca area kerja mesin melalui command `M115`.
 - Konfigurasi ini disiapkan untuk integrasi monitoring dari interface, termasuk pembacaan feedrate, area kerja, soft endstop, dan sensor homing.
+- Arah motor Z memakai `INVERT_Z_DIR false` agar homing `Z_HOME_DIR 1` bergerak naik menuju proximity pada Z-Max.
+
+Status proximity Z-Max wajib menunjukkan `open` saat bebas dan `TRIGGERED` saat mendeteksi logam melalui `M119`. Setelah perubahan arah, lakukan jog Z jarak kecil dari tengah lintasan sebelum menjalankan `G28 Z`.
 
 ## Catatan Integrasi AYB Interface
 
