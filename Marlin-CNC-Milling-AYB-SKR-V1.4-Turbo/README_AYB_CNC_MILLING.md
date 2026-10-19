@@ -22,6 +22,7 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 - Arah motor Z memakai `INVERT_Z_DIR true` agar arah koordinat positif Z bergerak naik menuju proximity pada Z-Max sesuai hasil uji hardware: perintah Z negatif sebelumnya justru menggerakkan spindle naik.
 - `HOME_Z_FIRST` aktif dan `Z_SAFE_HOMING` nonaktif karena Z memakai proximity Z-Max sebagai endstop nyata. Pada `G28` penuh, Z harus homing ke atas sebelum X dan Y bergerak untuk memberi jarak aman terhadap rangka mesin.
 - Steps/mm hasil kalibrasi hardware pada feedrate rendah adalah X `20.38`, Y `18.86`, dan Z `400`. X dan Y diuji tiga kali pada jarak 500 mm, sedangkan Z diuji tiga kali pada jarak 50 mm; seluruh pengujian kembali ke titik ukur awal pada resolusi meteran yang digunakan.
+- Batas maksimum `M203` ditetapkan dalam mm/detik menjadi X `200`, Y `280`, dan Z `39`, yaitu sekitar 80% dari feedrate maksimum tanpa kehilangan langkah yang dilaporkan pada pengujian tanpa beban pemotongan. Nilai ini setara dengan F12000, F16800, dan F2340 dalam mm/menit.
 
 Status proximity Z-Max wajib menunjukkan `open` saat bebas dan `TRIGGERED` saat mendeteksi logam melalui `M119`. Setelah firmware baru dipasang, lakukan jog Z jarak kecil dari tengah lintasan: Z negatif harus turun dan Z positif harus naik. Jalankan `G28 Z` hanya setelah arah jog benar, kemudian uji `G28` penuh tanpa tool dan benda kerja. Perintah `G28 X` atau `G28 Y` saja tidak menjalankan homing Z terlebih dahulu.
 

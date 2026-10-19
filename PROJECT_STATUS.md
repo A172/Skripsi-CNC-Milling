@@ -16,14 +16,16 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 - Urutan homing penuh dikonfigurasi dengan `HOME_Z_FIRST` aktif dan `Z_SAFE_HOMING` nonaktif agar Z mencapai proximity atas sebelum X/Y bergerak secara horizontal.
 - Homing X, Y, Z secara terpisah dan `G28` penuh sudah berhasil diuji pada hardware dengan posisi akhir X=1300, Y=0, dan Z=0.
 - Steps/mm hasil kalibrasi hardware ditetapkan menjadi X `20.38`, Y `18.86`, dan Z `400`; pengujian berulang pada feedrate rendah menghasilkan jarak aktual sesuai perintah.
+- Pengujian travel tanpa beban tidak menunjukkan kehilangan langkah hingga F15000 pada X, F21000 pada Y, dan F2940 pada Z.
+- Batas maksimum `M203` ditetapkan dengan margin sekitar 80% menjadi X `200`, Y `280`, dan Z `39` mm/detik.
 
 Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/PROJECT_STATUS.md`.
 
 ## Fitur yang Sedang Dikerjakan
 
 - Validasi integrasi interface ESP32-S3 dengan Marlin pada hardware CNC.
-- Validasi akurasi dan kehilangan langkah pada feedrate gerak yang lebih tinggi.
-- Peninjauan batas maksimum `M203` dan akselerasi sebelum pengujian job CNC.
+- Validasi ketahanan gerak berulang pada batas `M203` baru.
+- Peninjauan akselerasi sebelum pengujian job CNC.
 
 ## Daftar Bug yang Masih Ada
 
@@ -36,8 +38,8 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 ## TODO Prioritas Berikutnya
 
 1. Pasang firmware hasil kalibrasi dan konfirmasi `M503` menampilkan `M92 X20.38 Y18.86 Z400.00`.
-2. Uji akurasi berulang dengan kenaikan feedrate bertahap tanpa tool dan benda kerja.
-3. Tinjau dan koreksi batas maksimum `M203` serta akselerasi sesuai kemampuan mekanik mesin.
+2. Uji akurasi pergi-kembali minimal 10 kali pada batas `M203` baru tanpa tool dan benda kerja.
+3. Tinjau dan koreksi akselerasi sesuai kemampuan mekanik mesin.
 4. Tinjau warning Marlin berdasarkan konfigurasi feedback dan wiring pin DIAG aktual.
 5. Lanjutkan validasi komunikasi UART dan pengujian hardware sesuai prosedur keselamatan.
 6. Tentukan dan validasi workflow akhir job: spindle OFF, Z ke posisi aman, lalu parkir X/Y bila diperlukan.
@@ -46,4 +48,4 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 
 - Interface ESP32-S3, environment `esp32-s3-devkitm-1`: **SUCCESS**; RAM 14,8% dan Flash 30,2%.
 - Marlin, environment `LPC1769`: **SUCCESS**; RAM 16,9% dan Flash 18,7%.
-- Pengujian hardware: **sebagian selesai** untuk arah gerak, sensor proximity, homing, dan akurasi jarak pada feedrate rendah; pemotongan dan feedrate tinggi belum diuji.
+- Pengujian hardware: **sebagian selesai** untuk arah gerak, sensor proximity, homing, akurasi jarak, dan pencarian batas travel tanpa beban; ketahanan jangka panjang serta pemotongan belum diuji.

@@ -29,6 +29,8 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Mengubah steps/mm X dari `20.57` menjadi `20.38` berdasarkan tiga pengujian perpindahan 500 mm pada feedrate 300 mm/menit.
 - Mencatat validasi hardware steps/mm Y `18.86` pada 500 mm dan Z `400` pada 50 mm, masing-masing tiga kali tanpa selisih yang terlihat pada resolusi meteran.
 - Memperbarui status homing penuh dari belum diuji menjadi berhasil diuji pada hardware.
+- Mengoreksi `DEFAULT_MAX_FEEDRATE` dari X/Y/Z `1700/1700/240` mm/detik menjadi `200/280/39` mm/detik berdasarkan margin sekitar 80% hasil uji travel tanpa kehilangan langkah.
+- Mendokumentasikan hasil maksimum pengujian tanpa beban: F15000 pada X, F21000 pada Y, dan F2940 pada Z.
 
 ### Notes
 

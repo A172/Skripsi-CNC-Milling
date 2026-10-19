@@ -40,6 +40,8 @@ Pengaturan tersebut hanya berlaku saat homing dan tidak otomatis memarkir spindl
 
 Kalibrasi gerak hardware pada feedrate rendah menetapkan steps/mm X `20.38`, Y `18.86`, dan Z `400`. X dan Y diuji tiga kali pada perpindahan 500 mm, sedangkan Z diuji tiga kali pada perpindahan 50 mm. Semua hasil sesuai jarak perintah dan kembali ke titik ukur awal pada resolusi meteran yang digunakan. Akurasi pada feedrate lebih tinggi masih harus diuji sebelum digunakan untuk proses milling.
 
+Pengujian travel tanpa beban pemotongan mencapai F15000 pada X, F21000 pada Y, dan F2940 pada Z tanpa kehilangan langkah. Firmware memakai batas `M203` sekitar 80% dari hasil tersebut, yaitu X `200`, Y `280`, dan Z `39` mm/detik (setara F12000, F16800, dan F2340). Batas travel ini bukan feedrate pemotongan; feedrate proses tetap harus disesuaikan dengan tool, spindle, dan material.
+
 ## Post-processor Fusion 360
 
 Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/README.md`. Periksa kembali seluruh G-code hasil post-processing sebelum dijalankan pada mesin.
