@@ -25,6 +25,7 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 - Marlin mengaktifkan sembilan workspace `G54`-`G59.3` dan penyimpanan EEPROM/flash melalui `M500`.
 - Interface memiliki menu Work Origin untuk memilih slot tersimpan dan Set/Save Origin untuk memperbarui slot aktif dengan `G92 X0 Y0 Z0` lalu `M500`.
 - MQTT `cnc/machine` menyediakan `work_origin` dan `work_origin_valid` untuk menampilkan workspace aktif pada dashboard Node-RED.
+- Pemilihan file tidak lagi membatalkan status Home dan Work Origin sehingga urutan operasi dapat memakai `Home All -> Use G54 -> Select Job -> Start`.
 - Post-processor mematikan `Job: Zero Starting Location (G92)` secara default agar file tidak menimpa workspace yang dipilih interface.
 
 Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/PROJECT_STATUS.md`.
@@ -37,6 +38,7 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 - Validasi satu file G-code baru hasil post-processing untuk memastikan footer parkir otomatis terbentuk dan dijalankan hanya setelah job selesai normal.
 - Validasi persistensi origin `G54` setelah power-cycle dan pemilihan ulang melalui interface.
 - Validasi perubahan status Work Origin pada MQTT Explorer dan dashboard Node-RED.
+- Validasi workflow pemilihan file setelah Home dan Work Origin pada hardware interface.
 - Peninjauan akselerasi sebelum pengujian job CNC.
 
 ## Daftar Bug yang Masih Ada

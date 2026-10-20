@@ -14,6 +14,7 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Dukungan workspace Marlin `G54`-`G59.3` dengan penyimpanan permanen melalui `EEPROM_SETTINGS` dan `M500`.
 - Menu Work Origin pada interface untuk memilih slot tersimpan serta Set/Save Origin untuk menyimpan nol benda kerja.
 - Field MQTT `work_origin` dan `work_origin_valid` pada `cnc/machine` untuk dashboard Node-RED.
+- Workflow `Home All -> Use G54-G59.3 -> Select Job -> Start` dengan mempertahankan interlock Home/Origin ketika file dipilih.
 
 ### Removed
 

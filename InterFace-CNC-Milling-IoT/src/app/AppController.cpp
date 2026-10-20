@@ -4042,8 +4042,8 @@ bool AppController::selectFileFromList() {
 
   if (_sdCard.selectJobFile(validation.path.c_str())) {
     _selectedJobSource = JobSource::SdCard;
-    _homeCycleIssued = false;
-    invalidateWorkOrigin();
+    // Pemilihan file hanya membaca dan menganalisis G-code. Karena tidak ada
+    // gerakan mesin, status Home dan Work Origin yang sudah divalidasi tetap berlaku.
     if (!_job.prepare(_sdCard, validation.path)) {
       showInfoScreen(
         "ANALISIS JOB",
@@ -4081,8 +4081,7 @@ bool AppController::selectSdCardJobFile(const char *path) {
   bool ok = _sdCard.selectJobFile(path);
   if (ok) {
     _selectedJobSource = JobSource::SdCard;
-    _homeCycleIssued = false;
-    invalidateWorkOrigin();
+    // Helper pemilihan file juga tidak mengubah referensi posisi mesin.
     ok = _job.prepare(_sdCard, path);
     _lcd.showMessage("SD Card", ok ? "File dipilih" : _job.errorMessage().c_str());
   } else {

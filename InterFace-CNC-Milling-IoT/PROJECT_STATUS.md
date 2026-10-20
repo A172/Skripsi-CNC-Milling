@@ -69,6 +69,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Menu Work Origin memilih sembilan slot `G54`-`G59.3` dan menandai slot yang aktif.
 - Menu Set/Save Origin dengan jog X/Y/Z mengirim `G92 X0 Y0 Z0`, `M500`, dan opsi soft endstop `M211 S1`.
 - Workspace diinvalidasi setelah homing/reset/job selesai/stop/error/disconnect dan harus dipilih ulang sebelum Start.
+- Pemilihan file mempertahankan status Home dan Work Origin karena proses tersebut tidak menggerakkan mesin; workflow operator dapat memakai `Home All -> Use G54 -> Select Job -> Start`.
 - Menu Machine Ctrl&Status untuk alarm, test buzzer, spindle, feedrate, area kerja, soft endstop, dan sensor homing.
 - Machine Ctrl&Status menampilkan `Alarm: OK/ERROR` dan item `Test Buzzer` untuk uji pola alarm lokal tanpa mengirim command ke Marlin.
 - Urutan Machine Ctrl&Status memprioritaskan status CNC, alarm, test buzzer, sensor home, dan soft endstop sebelum spindle serta parameter gerak.
@@ -147,6 +148,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Penyempurnaan machine status berbasis data nyata firmware Marlin.
 - Pemanfaatan posisi Marlin untuk workflow job yang lebih lengkap.
 - Validasi G-code sender, controlled pause/stop, progress, serta estimasi pada hardware nyata.
+- Validasi workflow `Home All -> Use G54 -> Select Job -> Start` dan pastikan pemilihan file tidak menghapus indikator Work Origin.
 - Validasi simpan, power-cycle, dan pemanggilan ulang origin `G54`-`G59.3` pada Marlin/SKR nyata.
 - Perancangan validasi dan izin eksekusi command/G-code MQTT yang aman.
 - Hasil GitHub Actions masih perlu dicek langsung setelah workflow ini dipush ke GitHub.

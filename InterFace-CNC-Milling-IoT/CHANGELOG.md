@@ -9,6 +9,7 @@
 - Menambahkan interlock agar Home All dan workspace harus dipilih ulang setelah homing, job selesai, stop, error, SD dilepas, atau koneksi Marlin terputus.
 - Menghapus prompt repeat otomatis setelah safe park `G28`; pengulangan job kini harus melalui Home All dan pemilihan workspace tersimpan.
 - Menambahkan `work_origin` dan `work_origin_valid` pada payload retained `cnc/machine` untuk menampilkan workspace aktif di dashboard Node-RED.
+- Mempertahankan status Home dan Work Origin saat memilih file sehingga workflow dapat dilakukan dengan urutan `Home All -> Use G54 -> Select Job -> Start`.
 
 ## 2026-08-22
 

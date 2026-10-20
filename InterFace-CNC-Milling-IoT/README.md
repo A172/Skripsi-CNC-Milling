@@ -216,11 +216,13 @@ Job aktif ditampilkan kembali di standby screen sebagai `Job: nama_file`.
 
 Setelah file dipilih, firmware menganalisis G-code secara bertahap agar tombol, LCD, MQTT, dan UART tetap responsif. Workflow menjalankan job:
 
-1. Pilih file melalui `Select Job`.
-2. Tunggu status job `READY` dan estimasi selesai dihitung.
-3. Jalankan `Home All`.
-4. Pilih workspace tersimpan, misalnya `Use G54`, atau gunakan `Set/Save Origin` untuk membuat origin baru.
+1. Jalankan `Home All`.
+2. Pilih workspace tersimpan, misalnya `Use G54`, atau gunakan `Set/Save Origin` untuk membuat origin baru.
+3. Pilih file melalui `Select Job`.
+4. Tunggu status job `READY` dan estimasi selesai dihitung.
 5. Tahan tombol `X+ / PLAY` selama 1 detik, lalu konfirmasi Start.
+
+Pemilihan file hanya membaca dan menganalisis G-code sehingga tidak membatalkan status Home maupun Work Origin. Dengan demikian operator dapat memakai urutan `Home All -> Use G54 -> Select Job -> Start`. Interlock tetap dihapus setelah homing ulang, job selesai, controlled stop, error, SD dilepas, reset, atau koneksi Marlin terputus.
 
 Kontrol job saat berjalan:
 
