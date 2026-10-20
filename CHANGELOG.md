@@ -24,6 +24,7 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 ### Changed
 
+- Meringkas README utama dan README interface; detail perkembangan tetap dikelola melalui PROJECT_STATUS dan CHANGELOG masing-masing komponen.
 - Mempertahankan workspace terakhir setelah Home All dan job selesai normal selama mesin tetap menyala, sehingga Repeat Job tidak perlu memilih origin ulang.
 - Mengubah Work Origin menjadi submenu per slot dengan pilihan `Pilih Origin` dan `Perbarui Origin`, menggunakan pola konfirmasi input yang konsisten dengan menu lain.
 - Menampilkan kode workspace pada judul dialog pembaruan origin agar pesan konfirmasi tetap terbaca utuh pada LCD.

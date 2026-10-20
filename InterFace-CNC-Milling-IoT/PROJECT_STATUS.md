@@ -36,6 +36,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 
 ## Fitur yang Sudah Selesai
 
+- README diringkas menjadi gambaran sistem, hardware, fitur, workflow operator, MQTT, build, dan keselamatan; rincian status tetap dipisahkan ke PROJECT_STATUS dan riwayat ke CHANGELOG.
 - LCD menu system untuk booting, standby, menu utama, submenu, info, dan konfirmasi.
 - Input push button dan rotary encoder.
 - Passive buzzer GPIO 38 dengan PWM LEDC dan pola bunyi non-blocking.

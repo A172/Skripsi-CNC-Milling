@@ -6,6 +6,7 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 
 ## Fitur yang Sudah Selesai
 
+- README utama dan README interface telah diringkas agar menampilkan garis besar proyek tanpa mengulang seluruh detail teknis.
 - Struktur repository gabungan untuk tiga komponen proyek.
 - Pemisahan folder firmware interface, firmware Marlin, dan post-processor.
 - Aturan ignore untuk cache, hasil build, file editor lokal, dan file sementara.

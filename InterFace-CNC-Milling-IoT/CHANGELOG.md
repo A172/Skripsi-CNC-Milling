@@ -2,6 +2,7 @@
 
 ## 2026-10-21
 
+- Meringkas README dari dokumentasi teknis panjang menjadi panduan utama proyek; detail status dan riwayat tetap berada di PROJECT_STATUS serta CHANGELOG.
 - Mempertahankan workspace terakhir selama satu sesi mesin: Home All dan job selesai normal memuat ulang G54-G59.3 secara otomatis melalui `G53` lalu workspace terpilih.
 - Mengizinkan Repeat Job tanpa memilih origin ulang setelah penyelesaian normal; reset/power-cycle, stop, error, SD dilepas, dan koneksi Marlin terputus tetap menginvalidasi origin.
 - Mengubah Work Origin menjadi menu dua tingkat: pilih slot `G54`-`G59.3`, lalu pilih `Pilih Origin` atau `Perbarui Origin`.
