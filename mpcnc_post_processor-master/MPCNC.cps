@@ -71,7 +71,7 @@ var eCoolant = {
 // user-defined properties
 properties = {
   job0_SelectedFirmware : fw,            // Firmware to use in special cases
-  job1_SetOriginOnStart: true,           // Set current position as 0,0,0 on start (G92)
+  job1_SetOriginOnStart: false,          // Interface selects a stored G54-G59.3 workspace
   job2_ManualSpindlePowerControl: true,  // Spindle motor is controlled by manual switch 
   job3_CommentLevel: eComment.Info,      // The level of comments included 
   job4_UseArcs: true,                    // Produce G2/G3 for arcs
@@ -156,7 +156,7 @@ propertyDefinitions = {
 
   job1_SetOriginOnStart: {
     title: "Job: Zero Starting Location (G92)", description: "On start set the current location as 0,0,0 (G92)", group: 1,
-    type: "boolean", default_mm: true, default_in: true
+    type: "boolean", default_mm: false, default_in: false
   },
   job2_ManualSpindlePowerControl: {
     title: "Job: Manual Spindle On/Off", description: "Enable to manually turn spindle motor on/off", group: 1,

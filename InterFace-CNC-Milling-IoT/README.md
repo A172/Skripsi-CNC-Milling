@@ -69,7 +69,8 @@ ESP32-S3 CNC Interface
 - Navigasi menggunakan push button dan rotary encoder.
 - Browser SD card untuk memilih file job.
 - Tampilan job terpilih dan estimasi waktu di standby.
-- Menu Set Origin dengan jog X/Y/Z dan konfirmasi `G92 X0 Y0 Z0`.
+- Menu Work Origin untuk memilih sembilan workspace Marlin `G54`-`G59.3` dan menandai workspace aktif.
+- Menu Set/Save Origin dengan jog X/Y/Z, `G92 X0 Y0 Z0`, dan `M500` untuk menyimpan offset workspace aktif ke EEPROM/flash Marlin.
 - Soft endstop Marlin dapat diaktifkan setelah Set Origin dengan `M211 S1`.
 - Menu Machine Ctrl&Status untuk status alarm, test buzzer, spindle, feedrate, area kerja, soft endstop, dan sensor homing.
 - Menu Network untuk WiFi, MQTT, broker, AP setup, waktu singkat, tanggal lengkap, status sinkronisasi, dan reset WiFi.
@@ -165,15 +166,17 @@ Navigasi menu menggunakan rotary encoder. Klik rotary atau tombol Enter menjalan
 Submenu ini mengikuti urutan persiapan bidang kerja:
 
 1. `Home All (G28)` untuk mencari referensi home mesin.
-2. `Set Origin (G92)` untuk memosisikan spindle dan menetapkan nol material.
+2. `Work Origin` untuk memilih origin tersimpan `G54`-`G59.3` atau menyimpan origin baru.
 
 ### Home All
 
 `Home All (G28)` membuka dialog konfirmasi sebelum mengirim `G28`. Perintah hanya dikirim jika komunikasi CNC berstatus `CONNECTED` dan fitur Home aktif. Home All menggerakkan mesin menuju sensor home dan tidak menetapkan origin material.
 
-### Set Origin
+### Work Origin dan Set/Save Origin
 
-Menu Set Origin menampilkan koordinat X/Y/Z dan memungkinkan user mengatur posisi spindle sebelum menyimpan origin material.
+Menu Work Origin menyediakan sembilan slot workspace: `G54`, `G55`, `G56`, `G57`, `G58`, `G59`, `G59.1`, `G59.2`, dan `G59.3`. Memilih `Use G54` dan seterusnya hanya mengaktifkan offset yang sudah tersimpan; perintah ini tidak menggerakkan spindle. Pemilihan workspace hanya diizinkan setelah `Home All`.
+
+Item `Set/Save Origin` menampilkan koordinat X/Y/Z dan memungkinkan user mengatur posisi spindle sebelum menyimpan origin material ke slot aktif. Slot aktif ditandai `*` pada daftar.
 
 Kontrol yang digunakan:
 
@@ -189,10 +192,13 @@ Saat konfirmasi `Yes`, firmware mengirim perintah:
 ```gcode
 M400
 G92 X0 Y0 Z0
+M500
 M211 S1
 ```
 
-`M211 S1` dikirim jika fitur soft endstop setelah Set Origin aktif di konfigurasi.
+`G92` memperbarui offset slot workspace aktif, lalu `M500` menyimpan tabel `G54`-`G59.3` secara permanen pada Marlin. `M211 S1` dikirim jika fitur soft endstop setelah Set Origin aktif di konfigurasi. Penyimpanan hanya dilakukan ketika job tidak aktif.
+
+Setelah mesin dinyalakan ulang atau setelah `G28`, jalankan `Home All`, lalu pilih lagi slot yang sama, misalnya `Use G54`. Interface mengirim `G53` lalu `G54` agar offset tersimpan dimuat ulang dengan pasti. Jika posisi fixture atau panjang tool berubah, periksa dan simpan ulang origin sebelum menjalankan job.
 
 ### Select Job
 
@@ -213,7 +219,7 @@ Setelah file dipilih, firmware menganalisis G-code secara bertahap agar tombol, 
 1. Pilih file melalui `Select Job`.
 2. Tunggu status job `READY` dan estimasi selesai dihitung.
 3. Jalankan `Home All`.
-4. Atur dan simpan `Set Origin` sehingga soft endstop aktif.
+4. Pilih workspace tersimpan, misalnya `Use G54`, atau gunakan `Set/Save Origin` untuk membuat origin baru.
 5. Tahan tombol `X+ / PLAY` selama 1 detik, lalu konfirmasi Start.
 
 Kontrol job saat berjalan:
@@ -328,7 +334,7 @@ Topic utama yang digunakan:
 - `cnc/progress` - publish nama file, progress byte yang sudah diakui Marlin, dan state job.
 - `cnc/error` - publish status error aktif.
 - `cnc/position` - publish posisi X/Y/Z dari Marlin.
-- `cnc/machine` - publish state CNC, spindle, soft endstop, feedrate, dan sensor home.
+- `cnc/machine` - publish state CNC, spindle, Work Origin, soft endstop, feedrate, dan sensor home.
 - `cnc/file/start` - subscribe awal transfer file G-code dari Node-RED.
 - `cnc/file/chunk` - subscribe potongan file G-code berurutan dari Node-RED.
 - `cnc/file/finish` - subscribe akhir transfer file G-code dari Node-RED.
@@ -404,6 +410,8 @@ Contoh `cnc/machine` ketika komunikasi CNC dinonaktifkan:
   "area_y": 2600,
   "area_z": 140,
   "area_source": "fallback",
+  "work_origin": "NONE",
+  "work_origin_valid": false,
   "x_home": "UNKNOWN",
   "y_home": "UNKNOWN",
   "z_home": "UNKNOWN",
@@ -420,6 +428,8 @@ Status sensor home/endstop dikirim pada `cnc/machine` melalui field kompatibel l
 
 Area kerja mesin dikirim pada `cnc/machine` melalui field kompatibel `area_x`, `area_y`, `area_z`, dan `area_source`, serta field terstruktur `work_area`. Nilai `area_source`/`work_area.source` bernilai `fallback` jika berasal dari konfigurasi lokal interface dan berubah menjadi `marlin` setelah geometry report `M115` berhasil diparse.
 
+Work Origin aktif dikirim melalui `work_origin`, misalnya `G54`, dan `work_origin_valid`. Nilai valid hanya `true` setelah Home All selesai diperintahkan dan workspace dipilih melalui interface. Setelah `G28`, reset, job selesai, stop, error, SD dilepas, atau koneksi Marlin terputus, interface mengirim `work_origin:"NONE"` dan `work_origin_valid:false`. Perubahan workspace yang dikirim dari software lain seperti Repetier Host tidak dapat diketahui interface sampai workspace dipilih ulang dari menu interface.
+
 Contoh `cnc/machine` saat sensor sudah terbaca sebagian:
 
 ```json
@@ -431,6 +441,8 @@ Contoh `cnc/machine` saat sensor sudah terbaca sebagian:
   "area_y": 2600,
   "area_z": 140,
   "area_source": "marlin",
+  "work_origin": "G54",
+  "work_origin_valid": true,
   "work_area": {"x": 1250, "y": 2600, "z": 140, "valid": true, "source": "marlin"},
   "home": {"x": "OPEN", "y": "TRIGGERED", "z": "UNKNOWN"},
   "home_valid": {"x": true, "y": true, "z": false},
@@ -455,6 +467,7 @@ Jika belum ada file yang dipilih, field `file` berisi `Belum dipilih`, progress 
 - Status Sistem: `cnc/status.connected`, `cnc/status.state`, `cnc/machine.connected`, `cnc/machine.state`, dan `cnc/machine.activity`.
 - Posisi Mesin: `cnc/position.x/y/z` serta `cnc/machine.x_home/y_home/z_home` atau `cnc/machine.home.x/y/z`.
 - Status Pekerjaan: `cnc/progress.file`, `cnc/progress.progress`, dan `cnc/progress.state`.
+- Work Origin: `cnc/machine.work_origin` dan `cnc/machine.work_origin_valid`.
 - Status Spindle: `cnc/machine.spindle`.
 - Parameter Gerak: `cnc/machine.feed_xy`, `cnc/machine.feed_z`, `cnc/machine.soft_endstop`, `cnc/machine.area_x/y/z`, dan `cnc/machine.work_area.x/y/z/source`.
 - Informasi Jaringan: `cnc/network.ssid/ip/mqtt` serta `cnc/time.time/date/sync`.
@@ -654,6 +667,8 @@ Status integrasi saat ini:
 - Nilai posisi tersebut dipakai oleh tampilan standby, Set Origin, dan MQTT `cnc/position`.
 - Setelah Marlin mulai merespons, interface melakukan prefetch status non-gerak secara round-robin untuk `M203`, `M115`, `M119`, dan `M211` agar Feedrate, Area X/Y/Z, sensor home, dan soft endstop sudah tersedia ketika user masuk menu Machine Ctrl&Status. Jika salah satu respons belum bisa diparse, query lain tetap berjalan dan tidak tertahan.
 - Perintah gerak, spindle, feedrate, dan Set Origin hanya dikirim saat status Marlin `CONNECTED`.
+- Pemilihan workspace mengirim `M400`, `G53`, `G54`-`G59.3`, `M211 S1`, dan `M114`; urutan `G53` memastikan slot yang sama dimuat ulang setelah homing.
+- Penyimpanan origin mengirim `G92 X0 Y0 Z0` dan `M500`, sehingga firmware Marlin harus dibangun dengan `CNC_COORDINATE_SYSTEMS` dan `EEPROM_SETTINGS` aktif.
 - Job sender membaca file SD satu baris per transaksi dan menunggu respons `ok` sebelum mengirim baris berikutnya.
 - Polling status reguler dihentikan sementara saat sender memiliki UART; ketika `PAUSED`, sender mengirim heartbeat `M114` sendiri.
 
@@ -747,6 +762,7 @@ Workflow ini hanya saya pakai untuk memastikan firmware masih bisa dikompilasi. 
 - Pause/Stop bersifat controlled dan memakai `M400` untuk menunggu planner kosong; bukan emergency stop.
 - Estimasi waktu belum memperhitungkan akselerasi, pergantian tool, dan waktu proses non-gerak lainnya.
 - Interlock Home/Origin saat ini mencatat command yang dikirim interface; validasi independen bahwa homing benar-benar berhasil masih perlu ditambahkan dari status Marlin.
+- Workspace tersimpan belum divalidasi pada hardware setelah power-cycle. Penggunaan ulang origin tetap mensyaratkan fixture tidak bergeser dan panjang tool tidak berubah.
 - MQTT command sudah dapat diterima dan dicatat di Serial, tetapi belum dieksekusi.
 - Baris G-code MQTT sudah dapat diterima dan dicatat di Serial, tetapi belum dikirim ke Marlin atau disimpan ke SD card.
 - Upload file G-code via MQTT sudah menyimpan file ke MicroSD, tetapi belum otomatis memilih job, belum masuk `GcodeJobController`, dan belum menjalankan mesin.

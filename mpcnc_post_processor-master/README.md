@@ -46,7 +46,7 @@ Use these properties to control overall aspects of the job.
 |Title|Description|Default|
 |---|---|---|
 Job: CNC Firmware|Dialect of GCode to create|**Marlin 2.x**|
-Job: Job: Zero Starting Location (G92)|On start set the current location as 0,0,0 (G92).|**true**|
+Job: Job: Zero Starting Location (G92)|On start set the current location as 0,0,0 (G92). Keep this off when the ESP32 interface selects a stored G54-G59.3 workspace.|**false**|
 Job: Manual Spindle On/Off|Enable to manually turn spindle motor on/off. Post processor will issue additional pauses for TURN ON/TURN OFF the motor.|**true**|
 Job: Comment Level|Controls a increasing level of comments to be included: Off, Important, Info, Debug|**Info**|
 Job: Use Arcs|Use G2/G3 g-codes for circular movements.|**true**|
@@ -77,6 +77,8 @@ M400
 ```
 
 `G28` uses the Marlin configuration that homes Z first and then X/Y. It also clears the `G92` position shift so the park target is interpreted in machine coordinates. The X/Y move is emitted before the final Z descent to avoid diagonal travel into the park position.
+
+For jobs started from the ESP32 interface, keep `Job: Zero Starting Location (G92)` disabled. Run Home All and select the stored Work Origin on the interface before Start; otherwise a generated `G92` would overwrite the selected workspace at the program start.
 
 When `Job: Manual Spindle On/Off` is enabled, the post-processor also inserts a user-confirmation pause after `M5` and before `G28`. Keep this enabled until automatic relay control by `M3/M5` has been verified on the hardware; disable it only when the spindle is confirmed to stop reliably from `M5`.
 

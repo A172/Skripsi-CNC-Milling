@@ -18,6 +18,8 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 - `SPINDLE_LASER_ACTIVE_STATE` diset `HIGH`.
 - PWM spindle tidak diaktifkan; output dipakai sebagai sinyal ON/OFF untuk relay atau modul kontrol spindle.
 - Mengaktifkan `M115_GEOMETRY_REPORT` agar AYB Interface dapat membaca area kerja mesin melalui command `M115`.
+- Mengaktifkan `CNC_COORDINATE_SYSTEMS` untuk sembilan workspace `G54`-`G59.3`.
+- Mengaktifkan `EEPROM_SETTINGS` agar tabel workspace dapat disimpan dengan `M500` dan dimuat kembali setelah power-cycle.
 - Area kerja X dibatasi menjadi `0..1250 mm` melalui `X_BED_SIZE 1250`; soft endstop akan menolak target X di bawah `0` atau di atas `1250` setelah posisi mesin diketahui melalui homing.
 - Konfigurasi ini disiapkan untuk integrasi monitoring dari interface, termasuk pembacaan feedrate, area kerja, soft endstop, dan sensor homing.
 - Arah motor Z memakai `INVERT_Z_DIR true` agar arah koordinat positif Z bergerak naik menuju proximity pada Z-Max sesuai hasil uji hardware: perintah Z negatif sebelumnya justru menggerakkan spindle naik.
@@ -33,6 +35,12 @@ Kecepatan homing baru sudah diuji pada hardware. Z bergerak naik lebih cepat dan
 Setelah firmware dengan batas X baru dipasang, `G28 X` harus berakhir pada koordinat `X1250` (bukan lagi `X1300`). Validasi perubahan ini tanpa tool dan benda kerja, lalu uji gerakan secara bertahap dari dekat X-Max sebelum mencoba perjalanan panjang menuju `X0`.
 
 `HOME_Z_FIRST` hanya mengatur urutan saat command homing dijalankan. Fitur ini tidak otomatis menaikkan Z atau memarkir spindle setelah pekerjaan selesai; workflow akhir pekerjaan harus diatur terpisah dan wajib mematikan spindle sebelum gerakan parkir.
+
+## Workspace G54-G59.3
+
+Origin benda kerja dapat disimpan pada sembilan slot: `G54`, `G55`, `G56`, `G57`, `G58`, `G59`, `G59.1`, `G59.2`, dan `G59.3`. Pilih slot, arahkan tool ke nol benda kerja, jalankan `G92 X0 Y0 Z0`, lalu `M500`. Setelah mesin dinyalakan kembali, lakukan `G28` dan pilih lagi slot yang sama sebelum menjalankan job. Memilih workspace tidak menggerakkan mesin.
+
+Pada board LPC1769, penyimpanan ini memakai fallback flash EEPROM dari Marlin. Jalankan `M500` hanya ketika mesin idle. Origin tersimpan hanya tetap valid jika fixture tidak bergeser dan referensi panjang tool tidak berubah; setelah mengganti tool, validasi ulang terutama sumbu Z.
 
 ## Catatan Integrasi AYB Interface
 
@@ -59,5 +67,5 @@ Nama file internal Marlin tersebut tidak diganti karena dibutuhkan oleh proses b
 Jika firmware binary diunggah ke GitHub Release, gunakan nama seperti:
 
 ```text
-marlin-cnc-milling-ayb-skr-v1.4-turbo-2026-08-22.bin
+marlin-cnc-milling-ayb-skr-v1.4-turbo-2026-10-20.bin
 ```

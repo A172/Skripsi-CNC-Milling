@@ -9,7 +9,7 @@ namespace AppConfig {
   constexpr const char *FIRMWARE_AUTHOR = "Alfath Yusuf Biyono";
   constexpr const char *FIRMWARE_AUTHOR_ID = "2141170132";
   constexpr const char *FIRMWARE_ORGANIZATION = "PT AUDIO YUDISTIRO BUANA";
-  constexpr const char *FIRMWARE_LAST_UPDATED = "22/08/2026";
+  constexpr const char *FIRMWARE_LAST_UPDATED = "21/10/2026";
 
   // Fokus pengembangan saat ini: validasi tampilan dan navigasi.
   // Saat aktif, perintah G-code tidak dikirim ke controller CNC.
@@ -18,6 +18,9 @@ namespace AppConfig {
   // Set Origin tetap diizinkan menggerakkan mesin saat mode UI aktif.
   // Ubah ke false jika hanya ingin menguji tampilan tanpa gerakan hardware.
   constexpr bool ENABLE_SET_ORIGIN_CONTROL = true;
+  // G54-G59.3 dipilih dari interface dan disimpan permanen oleh Marlin melalui M500.
+  constexpr bool ENABLE_WORK_COORDINATE_CONTROL = true;
+  constexpr uint8_t WORK_COORDINATE_COUNT = 9;
   // Setelah G92 disimpan, aktifkan soft endstop agar job berjalan dalam batas mesin.
   constexpr bool ENABLE_SOFT_ENDSTOP_ON_SET_ORIGIN = true;
   constexpr bool ENABLE_HOME_CONTROL = true;

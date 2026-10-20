@@ -28,6 +28,8 @@ Area X/Y/Z sekarang memiliki fallback lokal 1250/2600/140 mm sejak koneksi Marli
 
 Area kerja mesin juga dikirim ke dashboard melalui payload retained `cnc/machine` sebagai `area_x`, `area_y`, `area_z`, `area_source`, dan objek `work_area` agar panel Data Mesin Node-RED dapat menampilkan Area X/Y/Z tanpa membaca LCD.
 
+Workflow origin terbaru memakai workspace Marlin `G54`-`G59.3`. Interface menyediakan menu untuk memilih slot tersimpan dan `Set/Save Origin` yang mengirim `G92 X0 Y0 Z0` lalu `M500`. Setelah homing, reset, job selesai, stop, error, atau koneksi terputus, workspace wajib dipilih ulang sebelum Start agar offset lama tidak dipakai tanpa konfirmasi.
+
 Firmware sekarang melakukan prefetch status mesin non-gerak setelah Marlin mulai merespons. Query `M203`, `M115`, `M119`, dan `M211` dikirim round-robin dengan jeda pendek agar nilai Feedrate, Area X/Y/Z, sensor home, dan soft endstop sudah siap saat menu Machine Ctrl&Status dibuka, tanpa tertahan jika salah satu respons belum bisa diparse.
 
 Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang sudah diprefetch, tanpa memanggil refresh otomatis. Refresh ulang parameter tetap tersedia lewat item `Refresh Status`.
@@ -63,8 +65,10 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - G-code sender file SD mengirim satu command dan menunggu respons `ok` Marlin sebelum melanjutkan.
 - Analisis G-code non-blocking menghitung estimasi `HH:MM:SS` untuk G0/G1/G2/G3/G4.
 - Tombol standby `X+/PLAY`, `X-/PAUSE`, dan `Z-/STOP` mengendalikan job dengan long-press pada Start/Stop.
-- Preflight Start memeriksa file SD, koneksi Marlin, Home All, Set Origin, dan soft endstop.
-- Menu Set Origin dengan jog X/Y/Z, `G92 X0 Y0 Z0`, dan opsi soft endstop `M211 S1`.
+- Preflight Start memeriksa file SD, koneksi Marlin, Home All, pemilihan Work Origin, dan soft endstop.
+- Menu Work Origin memilih sembilan slot `G54`-`G59.3` dan menandai slot yang aktif.
+- Menu Set/Save Origin dengan jog X/Y/Z mengirim `G92 X0 Y0 Z0`, `M500`, dan opsi soft endstop `M211 S1`.
+- Workspace diinvalidasi setelah homing/reset/job selesai/stop/error/disconnect dan harus dipilih ulang sebelum Start.
 - Menu Machine Ctrl&Status untuk alarm, test buzzer, spindle, feedrate, area kerja, soft endstop, dan sensor homing.
 - Machine Ctrl&Status menampilkan `Alarm: OK/ERROR` dan item `Test Buzzer` untuk uji pola alarm lokal tanpa mengirim command ke Marlin.
 - Urutan Machine Ctrl&Status memprioritaskan status CNC, alarm, test buzzer, sensor home, dan soft endstop sebelum spindle serta parameter gerak.
@@ -80,9 +84,10 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - `cnc/status.state` mengirim status koneksi interface dalam huruf kapital, yaitu `ONLINE` atau `OFFLINE`.
 - Disconnect MQTT normal mengirim ulang `cnc/network.mqtt` sebagai `DISCONNECTED` sebelum koneksi ditutup.
 - Serial Monitor tetap aktif saat pengujian MQTT tanpa Marlin karena `Serial1` ke SKR hanya dibuka ketika fitur koneksi Marlin diaktifkan.
-- Publish retained `cnc/machine` berisi state koneksi CNC, activity mesin, spindle, soft endstop, feedrate, dan sensor home.
+- Publish retained `cnc/machine` berisi state koneksi CNC, activity mesin, spindle, Work Origin, soft endstop, feedrate, dan sensor home.
 - Publish retained `cnc/machine` juga membawa area kerja mesin untuk tampilan Data Mesin dashboard.
 - `cnc/machine` mengirim status sensor home terstruktur melalui `home`, `home_valid`, dan `home_note` untuk membedakan `OPEN`, `TRIGGERED`, dan `UNKNOWN`.
+- `cnc/machine` mengirim Work Origin pilihan interface melalui `work_origin` dan `work_origin_valid` untuk dashboard Node-RED.
 - `cnc/progress` berisi nama file job, progress command yang diakui Marlin, dan state proses dengan fallback aman `Belum dipilih`, `0`, dan `IDLE`.
 - Placeholder data mesin yang belum tersedia menggunakan `UNKNOWN` dan nilai feedrate `null` tanpa membuat data Marlin palsu.
 - `cnc/position` membawa field `valid`, `source`, serta display `?` ketika posisi belum tersedia.
@@ -124,6 +129,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Validasi log UART Marlin untuk memastikan `M203` dan `M115` dibalas sehingga Feedrate serta Area X/Y/Z tidak lagi tampil `?`.
 - Validasi prefetch boot agar Machine Ctrl&Status langsung menampilkan parameter yang sudah terbaca tanpa jeda panjang saat menu dibuka.
 - Validasi payload `cnc/machine` dan transisi validitas `cnc/position` melalui MQTT Explorer.
+- Validasi perubahan `work_origin` dari `NONE` ke `G54`-`G59.3` dan kembali invalid setelah homing/reset/stop/error.
 - Validasi tampilan Area X/Y/Z pada Data Mesin Node-RED dari `cnc/machine.area_x/y/z` atau `cnc/machine.work_area`.
 - Validasi tampilan dashboard untuk sensor X/Y/Z dari `cnc/machine.home` dan indikator error ketika `home_valid` bernilai `false`.
 - Validasi pop-up Node-RED dari `cnc/alarm.popup`, termasuk level `ERROR` dan `WARNING`.
@@ -141,6 +147,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Penyempurnaan machine status berbasis data nyata firmware Marlin.
 - Pemanfaatan posisi Marlin untuk workflow job yang lebih lengkap.
 - Validasi G-code sender, controlled pause/stop, progress, serta estimasi pada hardware nyata.
+- Validasi simpan, power-cycle, dan pemanggilan ulang origin `G54`-`G59.3` pada Marlin/SKR nyata.
 - Perancangan validasi dan izin eksekusi command/G-code MQTT yang aman.
 - Hasil GitHub Actions masih perlu dicek langsung setelah workflow ini dipush ke GitHub.
 
@@ -156,6 +163,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Pause/Stop memakai barrier `M400` dan bukan emergency stop.
 - Estimasi belum memperhitungkan akselerasi, pergantian tool, dan waktu spindle mencapai RPM.
 - Flag Home/Origin preflight masih berdasarkan command yang dikirim interface, belum bukti independen dari Marlin.
+- Persistensi `G54`-`G59.3` melalui `M500` belum diuji setelah power-cycle pada SKR V1.4 Turbo.
 - Payload `cnc/command` baru dicetak ke Serial dan belum dieksekusi.
 - Payload `cnc/gcode` baru dicetak ke Serial dan belum dikirim ke Marlin atau SD card.
 - Upload file G-code lewat MQTT sudah menyimpan file ke MicroSD, tetapi belum memilih job otomatis dan belum dieksekusi.
@@ -173,6 +181,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Uji boot dengan SKR tersambung dan pastikan Serial Monitor menampilkan query prefetch `M203`, `M115`, `M119`, dan `M211` bertahap.
 - Verifikasi `cnc/position` menampilkan `valid:false`, nilai `null`, dan display `?` sebelum Marlin tersambung.
 - Verifikasi `cnc/machine` mengikuti state CNC dan data status mesin.
+- Verifikasi dashboard menampilkan `work_origin` hanya ketika `work_origin_valid:true`.
 - Verifikasi Data Mesin dashboard menampilkan Area X/Y/Z dari payload `cnc/machine`.
 - Uji Enter, Back, dan klik rotary untuk keluar dari layar About.
 - Aktifkan `CNC_ENABLE_MARLIN_CONNECTION` setelah SKR tersambung, lalu uji seluruh transisi status CNC.
@@ -187,6 +196,7 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Uji sender terlebih dahulu tanpa tool dan benda kerja menggunakan file G-code pendek.
 - Verifikasi sender tidak mengirim command berikutnya sebelum respons `ok`.
 - Uji Start, Pause, Resume, controlled Stop, completion, timeout, dan repeat job.
+- Uji `G28`, pilih `G54`, Set/Save Origin, matikan-nyalakan mesin, `G28`, lalu pilih `G54` lagi dan verifikasi nol benda kerja tidak berubah.
 - Bandingkan estimasi dengan durasi nyata untuk menentukan faktor koreksi mesin.
 - Uji field `file`, `progress`, dan `state` pada `cnc/progress` setelah memilih file SD card.
 - Verifikasi tujuh kelompok dashboard Node-RED terhadap field MQTT yang didokumentasikan.

@@ -125,6 +125,7 @@ class AppController {
   enum class PendingAction {
     None,
     HomeAll,
+    SelectWorkspace,
     SetOrigin,
     RepeatJob,
     StartJob,
@@ -368,9 +369,16 @@ class AppController {
     bool _standbyJobLongPressHandled = false;
     bool _homeCycleIssued = false;
     bool _originConfigured = false;
+    bool _workspaceSelected = false;
+    uint8_t _activeWorkspaceIndex = 0;
+    uint8_t _pendingWorkspaceIndex = 0;
 
     void enterSetOrigin();
     void confirmSetOrigin(UiState returnState);
+    std::vector<String> workOriginItems() const;
+    void requestWorkspaceSelection(uint8_t index);
+    void selectWorkspace(uint8_t index, UiState returnState);
+    void invalidateWorkOrigin();
     void handleJog(uint8_t pin, float distance);
     void updateJogDisplay();
 };

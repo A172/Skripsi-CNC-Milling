@@ -11,6 +11,9 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - PROJECT_STATUS utama untuk melacak status repository gabungan.
 - `.gitignore` utama untuk mencegah cache dan artefak build masuk ke Git.
 - Repository Git lokal dengan branch utama `main`.
+- Dukungan workspace Marlin `G54`-`G59.3` dengan penyimpanan permanen melalui `EEPROM_SETTINGS` dan `M500`.
+- Menu Work Origin pada interface untuk memilih slot tersimpan serta Set/Save Origin untuk menyimpan nol benda kerja.
+- Field MQTT `work_origin` dan `work_origin_valid` pada `cnc/machine` untuk dashboard Node-RED.
 
 ### Removed
 
@@ -19,6 +22,9 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 ### Changed
 
+- Mengubah default post-processor `Job: Zero Starting Location (G92)` menjadi `false` agar workspace terpilih tidak ditimpa saat job dimulai.
+- Mewajibkan Home All dan pemilihan ulang workspace setelah homing, power-cycle, job selesai, stop, error, atau koneksi Marlin terputus.
+- Menghapus repeat otomatis langsung setelah safe park; job ulang harus melewati Home All dan pemilihan Work Origin.
 - Mengubah batas area kerja X Marlin dari `1300` menjadi `1250` mm dan menyelaraskan fallback area kerja interface menjadi X/Y/Z `1250/2600/140` mm.
 - Mendokumentasikan hasil yang diharapkan setelah flashing: `G28 X` berakhir pada `X1250`, soft endstop membatasi X pada `0..1250`, dan posisi parkir X `1250` berada tepat di X-Max.
 - Mengubah `INVERT_Z_DIR` dari `true` menjadi `false` agar homing Z bergerak naik menuju proximity Z-Max sesuai `Z_HOME_DIR 1`.

@@ -620,7 +620,9 @@ void CloudMqtt::publishMachine(const MqttMonitoringSnapshot &snapshot, unsigned 
                    ",\"area_y\":" + areaY +
                    ",\"area_z\":" + areaZ +
                    ",\"area_source\":\"" + escapeJson(areaSource) +
-                   "\",\"x_home\":\"" + escapeJson(homeX) +
+                   "\",\"work_origin\":\"" + escapeJson(snapshot.workOrigin) +
+                   "\",\"work_origin_valid\":" + (snapshot.workOriginValid ? "true" : "false") +
+                   ",\"x_home\":\"" + escapeJson(homeX) +
                    "\",\"y_home\":\"" + escapeJson(homeY) +
                    "\",\"z_home\":\"" + escapeJson(homeZ) +
                    "\",\"work_area\":{\"x\":" + areaX +

@@ -431,6 +431,15 @@ namespace {
       "About"
     };
   }
+
+  const char *workspaceCode(uint8_t index) {
+    static const char *const codes[] = {
+      "G54", "G55", "G56", "G57", "G58", "G59", "G59.1", "G59.2", "G59.3"
+    };
+    return index < AppConfig::WORK_COORDINATE_COUNT ? codes[index] : "G54";
+  }
+
+  static_assert(AppConfig::WORK_COORDINATE_COUNT == 9, "Marlin menyediakan G54-G59.3 sebanyak 9 workspace");
 }
 
 // --------------------
@@ -543,6 +552,93 @@ void AppController::showSubMenu(const char *title, const std::vector<String> &it
   pushMenuState(_menu.items(), _menu.selectedIndex());
   _uiState = UiState::Menu;
   _menu.showMenu(title, items, 0);
+}
+
+std::vector<String> AppController::workOriginItems() const {
+  std::vector<String> items;
+  items.reserve(AppConfig::WORK_COORDINATE_COUNT + 1);
+  for (uint8_t index = 0; index < AppConfig::WORK_COORDINATE_COUNT; ++index) {
+    String item = String("Use ") + workspaceCode(index);
+    if (_workspaceSelected && _activeWorkspaceIndex == index) {
+      item += " *";
+    }
+    items.push_back(item);
+  }
+  items.push_back("Set/Save Origin");
+  return items;
+}
+
+void AppController::invalidateWorkOrigin() {
+  _originConfigured = false;
+  _workspaceSelected = false;
+}
+
+void AppController::requestWorkspaceSelection(uint8_t index) {
+  if (index >= AppConfig::WORK_COORDINATE_COUNT) {
+    showInfoScreen("WORK ORIGIN", "Workspace tidak valid");
+    return;
+  }
+
+  if (_job.isActive()) {
+    showJobControlMessage("Job sedang aktif");
+    return;
+  }
+
+  if (!_homeCycleIssued) {
+    showInfoScreen("WORK ORIGIN", "Home All dulu");
+    return;
+  }
+
+  if (!canSendMarlinCommand()) {
+    showCncUnavailable(UiState::Menu);
+    return;
+  }
+
+  _pendingWorkspaceIndex = index;
+  String message = String("Gunakan ") + workspaceCode(index) + " tersimpan?";
+  showActionConfirm(
+    PendingAction::SelectWorkspace,
+    "WORK ORIGIN",
+    message.c_str()
+  );
+}
+
+void AppController::selectWorkspace(uint8_t index, UiState returnState) {
+  if (!AppConfig::ENABLE_WORK_COORDINATE_CONTROL ||
+      index >= AppConfig::WORK_COORDINATE_COUNT ||
+      !canSendMarlinCommand()) {
+    showCncUnavailable(returnState);
+    return;
+  }
+
+  // G28 mereset position_shift tetapi Marlin dapat tetap mengingat indeks workspace.
+  // G53 memaksa kembali ke machine space sehingga pemilihan G54-G59.3 selalu memuat
+  // ulang offset yang tersimpan, termasuk ketika slot yang sama dipilih setelah homing.
+  Serial1.println("M400");
+  Serial1.println("G53");
+  Serial1.println(workspaceCode(index));
+  Serial1.println("M211 S1");
+  Serial1.println("M114");
+
+  _activeWorkspaceIndex = index;
+  _workspaceSelected = true;
+  _originConfigured = true;
+  _softEndstopEnabled = true;
+  _softEndstopLoaded = true;
+  _lastM211Request = millis();
+  _lastMarlinStatusPoll = _lastM211Request;
+
+  if (_displayEnabled && returnState == UiState::Menu) {
+    _menu.showMenu("WORK ORIGIN", workOriginItems(), index);
+  }
+
+  String message = String(workspaceCode(index)) + " aktif";
+  showInfoScreen(
+    "WORK ORIGIN",
+    message.c_str(),
+    returnState,
+    AppConfig::CONFIRM_RESULT_MESSAGE_MS
+  );
 }
 
 void AppController::showAboutScreen() {
@@ -1576,6 +1672,14 @@ void AppController::publishMqttMonitoring() {
   snapshot.workAreaSource = _machineWorkAreaLoaded
     ? (_machineWorkAreaFromFallback ? "fallback" : "marlin")
     : "unknown";
+  snapshot.workOriginValid =
+    marlinConnectionState() == MarlinConnectionState::Connected &&
+    _homeCycleIssued &&
+    _workspaceSelected &&
+    _originConfigured;
+  snapshot.workOrigin = snapshot.workOriginValid
+    ? workspaceCode(_activeWorkspaceIndex)
+    : "NONE";
   snapshot.machineActivity = machineActivityText();
   snapshot.posX = _posX;
   snapshot.posY = _posY;
@@ -1773,7 +1877,7 @@ void AppController::handleSdCardStateChanged() {
   _sdCard.clearSelectedJobFile();
   _selectedJobSource = JobSource::None;
   _homeCycleIssued = false;
-  _originConfigured = false;
+  invalidateWorkOrigin();
 
   if (_mqttUploadActive) {
     String fileName = _mqttUploadFileName;
@@ -2549,7 +2653,7 @@ void AppController::executeConfirmedAction() {
     if (AppConfig::ENABLE_HOME_CONTROL) {
       Serial1.println("G28");
       _homeCycleIssued = true;
-      _originConfigured = false;
+      invalidateWorkOrigin();
       showInfoScreen(
         "HOME ALL",
         "G28 dikirim",
@@ -2564,6 +2668,11 @@ void AppController::executeConfirmedAction() {
         AppConfig::CONFIRM_RESULT_MESSAGE_MS
       );
     }
+    return;
+  }
+
+  if (action == PendingAction::SelectWorkspace) {
+    selectWorkspace(_pendingWorkspaceIndex, returnState);
     return;
   }
 
@@ -2716,7 +2825,7 @@ bool AppController::startSelectedJob(bool returnToOrigin, UiState returnState) {
   }
 
   if (!_originConfigured) {
-    showInfoScreen("START JOB", "Set Origin dulu", returnState, AppConfig::CONFIRM_RESULT_MESSAGE_MS);
+    showInfoScreen("START JOB", "Pilih Work Origin", returnState, AppConfig::CONFIRM_RESULT_MESSAGE_MS);
     return false;
   }
 
@@ -2807,6 +2916,11 @@ void AppController::begin() {
 }
 
 void AppController::notifyJobFinished() {
+  // Footer safe park melakukan G28. Setelah homing, workspace harus dipilih ulang
+  // sebelum job berikutnya agar offset G54-G59.3 dimuat kembali secara eksplisit.
+  _homeCycleIssued = false;
+  invalidateWorkOrigin();
+
   if (_selectedJobSource != JobSource::SdCard || !_sdCard.hasSelectedJobFile()) {
     if (AppConfig::ENABLE_BUZZER_NOTIFICATION) {
       _buzzer.play(BuzzerHandler::Cue::Warning);
@@ -2823,11 +2937,11 @@ void AppController::notifyJobFinished() {
   if (AppConfig::ENABLE_BUZZER_NOTIFICATION) {
     _buzzer.play(BuzzerHandler::Cue::JobFinished);
   }
-  _uiState = UiState::Standby;
-  showActionConfirm(
-    PendingAction::RepeatJob,
+  showInfoScreen(
     "JOB SELESAI",
-    "Ulangi job ini?"
+    "Home + pilih G54",
+    UiState::Standby,
+    AppConfig::CONFIRM_RESULT_MESSAGE_MS
   );
 }
 
@@ -2902,7 +3016,7 @@ void AppController::update() {
       cncState == MarlinConnectionState::Lost ||
       cncState == MarlinConnectionState::Error) {
     _homeCycleIssued = false;
-    _originConfigured = false;
+    invalidateWorkOrigin();
   }
   _buzzer.setAlarmActive(
     AppConfig::ENABLE_BUZZER_MARLIN_ALARM &&
@@ -2959,7 +3073,7 @@ void AppController::updateJobControl() {
   if (_job.consumeStoppedEvent()) {
     _spindleOn = false;
     _homeCycleIssued = false;
-    _originConfigured = false;
+    invalidateWorkOrigin();
     if (AppConfig::ENABLE_BUZZER_NOTIFICATION) {
       _buzzer.play(BuzzerHandler::Cue::Warning);
     }
@@ -2970,7 +3084,7 @@ void AppController::updateJobControl() {
   if (_job.consumeErrorEvent()) {
     _spindleOn = false;
     _homeCycleIssued = false;
-    _originConfigured = false;
+    invalidateWorkOrigin();
     if (_marlinConnectionEnabled) {
       Serial1.println("M5");
     }
@@ -3325,10 +3439,11 @@ void AppController::onButtonPressed(uint8_t buttonNumber) {
 
   if (_uiState == UiState::SetOrigin) {
     if (buttonNumber == (uint8_t)PinConfig::BTN7) {
+      String message = String("Simpan origin ") + workspaceCode(_activeWorkspaceIndex) + "?";
       showActionConfirm(
         PendingAction::SetOrigin,
         "CONFIRM ORIGIN",
-        "Set posisi Origin?"
+        message.c_str()
       );
       return;
     }
@@ -3403,7 +3518,8 @@ void AppController::updateJogDisplay() {
   snprintf(
     top,
     sizeof(top),
-    _isJogAdjusting ? "ORIGIN ADJUST %c" : "ORIGIN SELECT %c",
+    _isJogAdjusting ? "%s ADJUST %c" : "%s SELECT %c",
+    workspaceCode(_activeWorkspaceIndex),
     axis
   );
 
@@ -3421,8 +3537,8 @@ void AppController::updateJogDisplay() {
     bot,
     nullptr,
     AppConfig::ENABLE_SOFT_ENDSTOP_ON_SET_ORIGIN
-      ? "ENT=SET+SE BACK=EXIT"
-      : "ENTER=SET BACK=EXIT",
+      ? "ENT=SAVE+SE BACK=EXIT"
+      : "ENTER=SAVE BACK=EXIT",
     -1,
     nullptr
   );
@@ -3444,11 +3560,14 @@ void AppController::confirmSetOrigin(UiState returnState) {
 
   bool commandSent =
     AppConfig::ENABLE_SET_ORIGIN_CONTROL &&
+    AppConfig::ENABLE_WORK_COORDINATE_CONTROL &&
+    _workspaceSelected &&
     canSendMarlinCommand();
 
   if (commandSent) {
     Serial1.println("M400");
     Serial1.println("G92 X0 Y0 Z0");
+    Serial1.println("M500");
 
     if (AppConfig::ENABLE_SOFT_ENDSTOP_ON_SET_ORIGIN) {
       Serial1.println("M211 S1");
@@ -3464,10 +3583,10 @@ void AppController::confirmSetOrigin(UiState returnState) {
   _posY = 0.0f;
   _posZ = 0.0f;
 
-  const char *resultTitle = "Set Origin: simulasi";
+  String resultTitle = "Origin: simulasi";
   const char *resultMessage = "SoftEnd: OFF";
   if (commandSent) {
-    resultTitle = "Set Origin: selesai";
+    resultTitle = String(workspaceCode(_activeWorkspaceIndex)) + " tersimpan";
     resultMessage = AppConfig::ENABLE_SOFT_ENDSTOP_ON_SET_ORIGIN
       ? "SoftEnd: ON"
       : "SoftEnd: OFF";
@@ -3477,7 +3596,7 @@ void AppController::confirmSetOrigin(UiState returnState) {
   _infoShownAt = millis();
   _infoAutoCloseMs = AppConfig::CONFIRM_RESULT_MESSAGE_MS;
   _uiState = UiState::Info;
-  _lcd.showCenteredMessage(resultTitle, resultMessage);
+  _lcd.showCenteredMessage(resultTitle.c_str(), resultMessage);
 }
 
 void AppController::processSelectAction() {
@@ -3519,8 +3638,13 @@ void AppController::processSelectAction() {
     if (choice == "Move & Jog") {
       showSubMenu(
         "MOVE & JOG",
-        {"Home All (G28)", "Set Origin (G92)"}
+        {"Home All (G28)", "Work Origin"}
       );
+      return;
+    }
+
+    if (choice == "Work Origin") {
+      showSubMenu("WORK ORIGIN", workOriginItems());
       return;
     }
 
@@ -3578,13 +3702,31 @@ void AppController::processSelectAction() {
       return;
     }
 
-    if (choice == "Set Origin (G92)") {
+    if (choice == "Set/Save Origin") {
       if (_job.isActive()) {
         showJobControlMessage("Job sedang aktif");
         return;
       }
+      if (!_homeCycleIssued) {
+        showInfoScreen("SET ORIGIN", "Home All dulu");
+        return;
+      }
+      if (!_workspaceSelected) {
+        showInfoScreen("SET ORIGIN", "Pilih G54-G59.3");
+        return;
+      }
       enterSetOrigin();
       return;
+    }
+
+    if (choice.startsWith("Use G")) {
+      for (uint8_t index = 0; index < AppConfig::WORK_COORDINATE_COUNT; ++index) {
+        String prefix = String("Use ") + workspaceCode(index);
+        if (choice == prefix || choice == prefix + " *") {
+          requestWorkspaceSelection(index);
+          return;
+        }
+      }
     }
 
     if (choice == "Spindle ON (M3)") {
@@ -3901,7 +4043,7 @@ bool AppController::selectFileFromList() {
   if (_sdCard.selectJobFile(validation.path.c_str())) {
     _selectedJobSource = JobSource::SdCard;
     _homeCycleIssued = false;
-    _originConfigured = false;
+    invalidateWorkOrigin();
     if (!_job.prepare(_sdCard, validation.path)) {
       showInfoScreen(
         "ANALISIS JOB",
@@ -3940,7 +4082,7 @@ bool AppController::selectSdCardJobFile(const char *path) {
   if (ok) {
     _selectedJobSource = JobSource::SdCard;
     _homeCycleIssued = false;
-    _originConfigured = false;
+    invalidateWorkOrigin();
     ok = _job.prepare(_sdCard, path);
     _lcd.showMessage("SD Card", ok ? "File dipilih" : _job.errorMessage().c_str());
   } else {
@@ -4044,7 +4186,7 @@ void AppController::beginMarlinConnection() {
   _machineWorkAreaFromFallback = true;
   _machineStatusPrefetchCursor = 0;
   _homeCycleIssued = false;
-  _originConfigured = false;
+  invalidateWorkOrigin();
   Serial.print("[CNC] Komunikasi Marlin aktif baud=");
   Serial.print(AppConfig::BTT_UART_BAUD);
   Serial.print(" RX=");

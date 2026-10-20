@@ -4,6 +4,11 @@
 
 - Mengubah fallback area kerja X pada interface dari `1300` menjadi `1250` mm agar konsisten dengan batas kerja Marlin terbaru.
 - Memperbarui contoh payload MQTT area kerja menjadi X `1250`, Y `2600`, dan Z `140` mm.
+- Menambahkan menu Work Origin untuk memilih workspace Marlin `G54`-`G59.3` yang tersimpan.
+- Mengubah workflow Set Origin menjadi Set/Save Origin yang mengirim `G92 X0 Y0 Z0` dan `M500` pada workspace aktif.
+- Menambahkan interlock agar Home All dan workspace harus dipilih ulang setelah homing, job selesai, stop, error, SD dilepas, atau koneksi Marlin terputus.
+- Menghapus prompt repeat otomatis setelah safe park `G28`; pengulangan job kini harus melalui Home All dan pemilihan workspace tersimpan.
+- Menambahkan `work_origin` dan `work_origin_valid` pada payload retained `cnc/machine` untuk menampilkan workspace aktif di dashboard Node-RED.
 
 ## 2026-08-22
 

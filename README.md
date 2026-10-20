@@ -44,11 +44,17 @@ Pengujian travel tanpa beban pemotongan mencapai F15000 pada X, F21000 pada Y, d
 
 Feedrate homing menggunakan X/Y `3000` mm/menit dan Z `600` mm/menit. Pendekatan kedua setelah bump dibagi empat menjadi X/Y `750` mm/menit dan Z `150` mm/menit agar pemicuan sensor tetap lebih pelan. Konfigurasi ini tidak memakai batas travel maksimum sebagai kecepatan homing dan masih memerlukan validasi langsung pada hardware.
 
+Marlin sekarang mengaktifkan `CNC_COORDINATE_SYSTEMS` dan `EEPROM_SETTINGS`. Origin benda kerja dapat disimpan pada sembilan slot `G54`-`G59.3` melalui workflow interface: Home All, pilih workspace, jog ke nol benda kerja, lalu Set/Save Origin. Interface mengirim `G92 X0 Y0 Z0` dan `M500`. Setelah power-cycle atau `G28`, lakukan Home All dan pilih ulang slot yang sama; memilih workspace tidak menyebabkan gerakan mesin.
+
+Workspace yang dipilih melalui interface dipublish ke Node-RED pada topic retained `cnc/machine` sebagai `work_origin` dan `work_origin_valid`. Dashboard harus menampilkan nilai seperti `G54` hanya ketika flag valid bernilai `true`; setelah status origin diinvalidasi nilainya menjadi `NONE`.
+
 ## Post-processor Fusion 360
 
 Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/README.md`. Periksa kembali seluruh G-code hasil post-processing sebelum dijalankan pada mesin.
 
 Post-processor Marlin untuk job milling sekarang menambahkan parkir otomatis hanya pada penyelesaian normal. Footer menunggu planner selesai, memastikan spindle OFF, menjalankan `G28` dengan Z lebih dahulu, lalu bergerak ke posisi parkir yang sudah divalidasi pada hardware: X `1250`, Y `100`, Z `-20`. Gerakan masuk parkir memakai XY `3000` mm/menit dan Z `600` mm/menit. Jika kontrol spindle manual aktif, terdapat konfirmasi operator setelah `M5` sebelum homing dimulai. Fitur dapat dinonaktifkan melalui properti `Job: Safe park on finish` dan tidak dijalankan pada emergency stop, job yang dibatalkan, laser/jet, firmware non-Marlin, atau saat `Extern: Stop File` digunakan.
+
+Untuk job dari interface, properti post `Job: Zero Starting Location (G92)` sekarang default `false`. Origin dipilih dari workspace tersimpan pada interface sehingga file G-code tidak menimpa G54-G59.3 saat mulai.
 
 Area kerja X pada Marlin dibatasi menjadi `0..1250 mm`. Karena homing X menggunakan endstop X-Max, `G28 X` menetapkan posisi X menjadi `1250`; target di bawah `0` atau di atas `1250` ditolak oleh soft endstop setelah homing. Posisi parkir X `1250` sekarang tepat berada di X-Max, sehingga langkah parkir setelah `G28` mempertahankan X di posisi home dan melanjutkan ke Y `100`, lalu Z `-20`.
 

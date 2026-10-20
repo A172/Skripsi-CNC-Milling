@@ -22,6 +22,10 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 - Feedrate homing ditingkatkan menjadi X/Y `3000` mm/menit dan Z `600` mm/menit; pendekatan kedua dibagi empat menjadi X/Y `750` mm/menit dan Z `150` mm/menit.
 - Kecepatan homing baru sudah diuji pada hardware: Z bergerak naik lebih cepat dan halus, proximity menghentikan homing dengan benar, pendekatan kedua berjalan lebih lambat, dan `G28` penuh tetap menyelesaikan Z sebelum X/Y.
 - Post-processor Fusion 360 memiliki opsi parkir otomatis untuk penyelesaian normal job milling Marlin: `M400`, spindle OFF, `G28`, lalu parkir pada X `1250`, Y `100`, Z `-20` dengan gerakan X/Y lebih dahulu dan Z terakhir.
+- Marlin mengaktifkan sembilan workspace `G54`-`G59.3` dan penyimpanan EEPROM/flash melalui `M500`.
+- Interface memiliki menu Work Origin untuk memilih slot tersimpan dan Set/Save Origin untuk memperbarui slot aktif dengan `G92 X0 Y0 Z0` lalu `M500`.
+- MQTT `cnc/machine` menyediakan `work_origin` dan `work_origin_valid` untuk menampilkan workspace aktif pada dashboard Node-RED.
+- Post-processor mematikan `Job: Zero Starting Location (G92)` secara default agar file tidak menimpa workspace yang dipilih interface.
 
 Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/PROJECT_STATUS.md`.
 
@@ -31,6 +35,8 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 - Validasi ulang `G28 X`, pelaporan `M115`, dan soft endstop X setelah batas maksimum diubah dari `1300` menjadi `1250` mm.
 - Validasi ketahanan gerak berulang pada batas `M203` baru.
 - Validasi satu file G-code baru hasil post-processing untuk memastikan footer parkir otomatis terbentuk dan dijalankan hanya setelah job selesai normal.
+- Validasi persistensi origin `G54` setelah power-cycle dan pemilihan ulang melalui interface.
+- Validasi perubahan status Work Origin pada MQTT Explorer dan dashboard Node-RED.
 - Peninjauan akselerasi sebelum pengujian job CNC.
 
 ## Daftar Bug yang Masih Ada
@@ -41,6 +47,7 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 - Batas X `1250` mm sudah konsisten di source Marlin dan fallback interface, tetapi belum diuji ulang pada hardware setelah firmware baru dipasang.
 - Urutan parkir otomatis sudah divalidasi secara statis pada post-processor, tetapi footer hasil Fusion 360 belum diuji sebagai satu job lengkap pada hardware.
 - Posisi parkir X `1250`, Y `100`, Z `-20` sudah diuji secara manual, tetapi workflow otomatis setelah job masih menunggu validasi end-to-end.
+- Build membuktikan dukungan workspace dan EEPROM dapat dikompilasi, tetapi nilai origin tersimpan belum diverifikasi setelah power-cycle pada hardware.
 - Batasan firmware yang belum selesai tetap mengikuti dokumentasi masing-masing komponen.
 
 ## TODO Prioritas Berikutnya
@@ -53,9 +60,10 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 6. Tinjau warning Marlin berdasarkan konfigurasi feedback dan wiring pin DIAG aktual.
 7. Lanjutkan validasi komunikasi UART dan pengujian hardware sesuai prosedur keselamatan.
 8. Buat satu file uji dari Fusion 360, tinjau footer, lalu jalankan tanpa tool dan benda kerja untuk memvalidasi parkir otomatis.
+9. Uji Home All, pilih G54, Set/Save Origin, power-cycle, Home All, pilih G54 lagi, lalu ukur ulang posisi nol benda kerja.
 
 ## Hasil Verifikasi Build
 
-- Interface ESP32-S3, environment `esp32-s3-devkitm-1`: **SUCCESS**; RAM 14,8% dan Flash 30,2%.
-- Marlin, environment `LPC1769`: **SUCCESS**; RAM 16,9% dan Flash 18,7%.
+- Interface ESP32-S3, environment `esp32-s3-devkitm-1`: **SUCCESS**; RAM 14,8% dan Flash 30,3%.
+- Marlin, environment `LPC1769`: **SUCCESS**; RAM 29,7% dan Flash 19,7% setelah flash EEPROM dan workspace diaktifkan.
 - Pengujian hardware: **sebagian selesai** untuk arah gerak, sensor proximity, homing, akurasi jarak, dan pencarian batas travel tanpa beban; ketahanan jangka panjang serta pemotongan belum diuji.

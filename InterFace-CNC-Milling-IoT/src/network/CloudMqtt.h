@@ -24,6 +24,7 @@ struct MqttMonitoringSnapshot {
   String machineActivity = "OFF";
   String jobError;
   String positionSource = "unavailable";
+  String workOrigin = "NONE";
   float posX = 0.0f;
   float posY = 0.0f;
   float posZ = 0.0f;
@@ -38,6 +39,7 @@ struct MqttMonitoringSnapshot {
   bool feedrateValid = false;
   bool workAreaValid = false;
   bool positionValid = false;
+  bool workOriginValid = false;
   String workAreaSource = "unknown";
 };
 
