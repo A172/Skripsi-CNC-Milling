@@ -377,6 +377,8 @@ class AppController {
     void confirmSetOrigin(UiState returnState);
     std::vector<String> workOriginItems() const;
     void requestWorkspaceSelection(uint8_t index);
+    void beginWorkspaceOriginUpdate(uint8_t index);
+    bool activateWorkspace(uint8_t index);
     void selectWorkspace(uint8_t index, UiState returnState);
     void invalidateWorkOrigin();
     void handleJog(uint8_t pin, float distance);

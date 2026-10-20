@@ -15,6 +15,7 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 - Menu Work Origin pada interface untuk memilih slot tersimpan serta Set/Save Origin untuk menyimpan nol benda kerja.
 - Field MQTT `work_origin` dan `work_origin_valid` pada `cnc/machine` untuk dashboard Node-RED.
 - Workflow `Home All -> Use G54-G59.3 -> Select Job -> Start` dengan mempertahankan interlock Home/Origin ketika file dipilih.
+- File G-code pemeriksaan origin aktif yang bergerak ke `X0 Y0` tanpa menurunkan Z, menunggu 10 detik, lalu Home All.
 
 ### Removed
 
@@ -23,6 +24,8 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 ### Changed
 
+- Mengubah Work Origin menjadi submenu per slot dengan pilihan `Pilih Origin` dan `Perbarui Origin`, menggunakan pola konfirmasi input yang konsisten dengan menu lain.
+- Menampilkan kode workspace pada judul dialog pembaruan origin agar pesan konfirmasi tetap terbaca utuh pada LCD.
 - Mengubah default post-processor `Job: Zero Starting Location (G92)` menjadi `false` agar workspace terpilih tidak ditimpa saat job dimulai.
 - Mewajibkan Home All dan pemilihan ulang workspace setelah homing, power-cycle, job selesai, stop, error, atau koneksi Marlin terputus.
 - Menghapus repeat otomatis langsung setelah safe park; job ulang harus melewati Home All dan pemilihan Work Origin.

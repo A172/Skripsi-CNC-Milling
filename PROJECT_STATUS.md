@@ -26,6 +26,9 @@ Repository gabungan telah disiapkan untuk menyimpan firmware interface ESP32-S3,
 - Interface memiliki menu Work Origin untuk memilih slot tersimpan dan Set/Save Origin untuk memperbarui slot aktif dengan `G92 X0 Y0 Z0` lalu `M500`.
 - MQTT `cnc/machine` menyediakan `work_origin` dan `work_origin_valid` untuk menampilkan workspace aktif pada dashboard Node-RED.
 - Pemilihan file tidak lagi membatalkan status Home dan Work Origin sehingga urutan operasi dapat memakai `Home All -> Use G54 -> Select Job -> Start`.
+- Menu Work Origin memakai dua tingkat: pilih slot `G54`-`G59.3`, kemudian pilih `Pilih Origin` atau `Perbarui Origin`.
+- Dialog Work Origin mengikuti kontrol global Enter=Yes, Back=No, rotary=ubah kursor, dan klik rotary=eksekusi pilihan; pilihan awal tetap No.
+- File `InterFace-CNC-Milling-IoT/examples/gcode/CEK_ORIGIN_XY.gcode` tersedia untuk uji visual `X0 Y0` workspace aktif tanpa menurunkan Z.
 - Post-processor mematikan `Job: Zero Starting Location (G92)` secara default agar file tidak menimpa workspace yang dipilih interface.
 
 Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/PROJECT_STATUS.md`.
@@ -39,6 +42,7 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 - Validasi persistensi origin `G54` setelah power-cycle dan pemilihan ulang melalui interface.
 - Validasi perubahan status Work Origin pada MQTT Explorer dan dashboard Node-RED.
 - Validasi workflow pemilihan file setelah Home dan Work Origin pada hardware interface.
+- Validasi submenu Work Origin dan konfirmasi pembaruan origin pada LCD/input hardware.
 - Peninjauan akselerasi sebelum pengujian job CNC.
 
 ## Daftar Bug yang Masih Ada
@@ -63,6 +67,7 @@ Status fitur rinci firmware interface tersedia pada `InterFace-CNC-Milling-IoT/P
 7. Lanjutkan validasi komunikasi UART dan pengujian hardware sesuai prosedur keselamatan.
 8. Buat satu file uji dari Fusion 360, tinjau footer, lalu jalankan tanpa tool dan benda kerja untuk memvalidasi parkir otomatis.
 9. Uji Home All, pilih G54, Set/Save Origin, power-cycle, Home All, pilih G54 lagi, lalu ukur ulang posisi nol benda kerja.
+10. Salin `CEK_ORIGIN_XY.gcode` ke MicroSD dan jalankan tanpa mata pahat untuk memvalidasi origin terpilih serta homing akhir.
 
 ## Hasil Verifikasi Build
 

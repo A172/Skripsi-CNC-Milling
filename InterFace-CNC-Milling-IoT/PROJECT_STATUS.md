@@ -28,7 +28,7 @@ Area X/Y/Z sekarang memiliki fallback lokal 1250/2600/140 mm sejak koneksi Marli
 
 Area kerja mesin juga dikirim ke dashboard melalui payload retained `cnc/machine` sebagai `area_x`, `area_y`, `area_z`, `area_source`, dan objek `work_area` agar panel Data Mesin Node-RED dapat menampilkan Area X/Y/Z tanpa membaca LCD.
 
-Workflow origin terbaru memakai workspace Marlin `G54`-`G59.3`. Interface menyediakan menu untuk memilih slot tersimpan dan `Set/Save Origin` yang mengirim `G92 X0 Y0 Z0` lalu `M500`. Setelah homing, reset, job selesai, stop, error, atau koneksi terputus, workspace wajib dipilih ulang sebelum Start agar offset lama tidak dipakai tanpa konfirmasi.
+Workflow origin terbaru memakai workspace Marlin `G54`-`G59.3`. Setiap slot menyediakan `Pilih Origin` untuk menggunakan data tersimpan dan `Perbarui Origin` untuk mengirim `G92 X0 Y0 Z0` lalu `M500`. Setelah homing, reset, job selesai, stop, error, atau koneksi terputus, workspace wajib dipilih ulang sebelum Start agar offset lama tidak dipakai tanpa konfirmasi.
 
 Firmware sekarang melakukan prefetch status mesin non-gerak setelah Marlin mulai merespons. Query `M203`, `M115`, `M119`, dan `M211` dikirim round-robin dengan jeda pendek agar nilai Feedrate, Area X/Y/Z, sensor home, dan soft endstop sudah siap saat menu Machine Ctrl&Status dibuka, tanpa tertahan jika salah satu respons belum bisa diparse.
 
@@ -66,10 +66,12 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Analisis G-code non-blocking menghitung estimasi `HH:MM:SS` untuk G0/G1/G2/G3/G4.
 - Tombol standby `X+/PLAY`, `X-/PAUSE`, dan `Z-/STOP` mengendalikan job dengan long-press pada Start/Stop.
 - Preflight Start memeriksa file SD, koneksi Marlin, Home All, pemilihan Work Origin, dan soft endstop.
-- Menu Work Origin memilih sembilan slot `G54`-`G59.3` dan menandai slot yang aktif.
-- Menu Set/Save Origin dengan jog X/Y/Z mengirim `G92 X0 Y0 Z0`, `M500`, dan opsi soft endstop `M211 S1`.
+- Menu Work Origin menampilkan sembilan slot `G54`-`G59.3`; setiap slot memiliki submenu `Pilih Origin` dan `Perbarui Origin`.
+- `Pilih Origin` menggunakan dialog konfirmasi standar dan mengaktifkan workspace tanpa menggerakkan mesin.
+- `Perbarui Origin` membuka jog X/Y/Z dan baru mengirim `G92 X0 Y0 Z0`, `M500`, serta opsi `M211 S1` setelah konfirmasi akhir.
 - Workspace diinvalidasi setelah homing/reset/job selesai/stop/error/disconnect dan harus dipilih ulang sebelum Start.
-- Pemilihan file mempertahankan status Home dan Work Origin karena proses tersebut tidak menggerakkan mesin; workflow operator dapat memakai `Home All -> Use G54 -> Select Job -> Start`.
+- Pemilihan file mempertahankan status Home dan Work Origin karena proses tersebut tidak menggerakkan mesin; workflow operator dapat memakai `Home All -> G54 -> Pilih Origin -> Select Job -> Start`.
+- File contoh `examples/gcode/CEK_ORIGIN_XY.gcode` tersedia untuk memeriksa `X0 Y0` workspace aktif tanpa menurunkan Z; pengujian wajib tanpa mata pahat dan tetap memerlukan konfirmasi operator.
 - Menu Machine Ctrl&Status untuk alarm, test buzzer, spindle, feedrate, area kerja, soft endstop, dan sensor homing.
 - Machine Ctrl&Status menampilkan `Alarm: OK/ERROR` dan item `Test Buzzer` untuk uji pola alarm lokal tanpa mengirim command ke Marlin.
 - Urutan Machine Ctrl&Status memprioritaskan status CNC, alarm, test buzzer, sensor home, dan soft endstop sebelum spindle serta parameter gerak.
@@ -148,7 +150,8 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Penyempurnaan machine status berbasis data nyata firmware Marlin.
 - Pemanfaatan posisi Marlin untuk workflow job yang lebih lengkap.
 - Validasi G-code sender, controlled pause/stop, progress, serta estimasi pada hardware nyata.
-- Validasi workflow `Home All -> Use G54 -> Select Job -> Start` dan pastikan pemilihan file tidak menghapus indikator Work Origin.
+- Validasi workflow `Home All -> G54 -> Pilih Origin -> Select Job -> Start` dan pastikan pemilihan file tidak menghapus indikator Work Origin.
+- Validasi navigasi submenu tiap workspace serta kontrol konfirmasi Enter=Yes, Back=No, rotary=pilih, dan klik rotary=eksekusi pilihan.
 - Validasi simpan, power-cycle, dan pemanggilan ulang origin `G54`-`G59.3` pada Marlin/SKR nyata.
 - Perancangan validasi dan izin eksekusi command/G-code MQTT yang aman.
 - Hasil GitHub Actions masih perlu dicek langsung setelah workflow ini dipush ke GitHub.
@@ -198,7 +201,8 @@ Masuk ke menu Machine Ctrl&Status sekarang hanya menampilkan nilai terakhir yang
 - Uji sender terlebih dahulu tanpa tool dan benda kerja menggunakan file G-code pendek.
 - Verifikasi sender tidak mengirim command berikutnya sebelum respons `ok`.
 - Uji Start, Pause, Resume, controlled Stop, completion, timeout, dan repeat job.
-- Uji `G28`, pilih `G54`, Set/Save Origin, matikan-nyalakan mesin, `G28`, lalu pilih `G54` lagi dan verifikasi nol benda kerja tidak berubah.
+- Uji `G28`, buka `G54`, jalankan `Perbarui Origin`, matikan-nyalakan mesin, `G28`, lalu gunakan `G54 -> Pilih Origin` dan verifikasi nol benda kerja tidak berubah.
+- Salin `examples/gcode/CEK_ORIGIN_XY.gcode` ke MicroSD dan uji tiap workspace yang digunakan tanpa mata pahat; pastikan Z tetap di home, X/Y berhenti tepat pada origin, lalu mesin kembali home setelah 10 detik.
 - Bandingkan estimasi dengan durasi nyata untuk menentukan faktor koreksi mesin.
 - Uji field `file`, `progress`, dan `state` pada `cnc/progress` setelah memilih file SD card.
 - Verifikasi tujuh kelompok dashboard Node-RED terhadap field MQTT yang didokumentasikan.

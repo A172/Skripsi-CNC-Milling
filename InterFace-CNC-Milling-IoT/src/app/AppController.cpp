@@ -556,15 +556,10 @@ void AppController::showSubMenu(const char *title, const std::vector<String> &it
 
 std::vector<String> AppController::workOriginItems() const {
   std::vector<String> items;
-  items.reserve(AppConfig::WORK_COORDINATE_COUNT + 1);
+  items.reserve(AppConfig::WORK_COORDINATE_COUNT);
   for (uint8_t index = 0; index < AppConfig::WORK_COORDINATE_COUNT; ++index) {
-    String item = String("Use ") + workspaceCode(index);
-    if (_workspaceSelected && _activeWorkspaceIndex == index) {
-      item += " *";
-    }
-    items.push_back(item);
+    items.push_back(workspaceCode(index));
   }
-  items.push_back("Set/Save Origin");
   return items;
 }
 
@@ -595,20 +590,20 @@ void AppController::requestWorkspaceSelection(uint8_t index) {
   }
 
   _pendingWorkspaceIndex = index;
-  String message = String("Gunakan ") + workspaceCode(index) + " tersimpan?";
+  String title = String(workspaceCode(index)) + " ORIGIN";
+  String message = String("Gunakan ") + workspaceCode(index) + "?";
   showActionConfirm(
     PendingAction::SelectWorkspace,
-    "WORK ORIGIN",
+    title.c_str(),
     message.c_str()
   );
 }
 
-void AppController::selectWorkspace(uint8_t index, UiState returnState) {
+bool AppController::activateWorkspace(uint8_t index) {
   if (!AppConfig::ENABLE_WORK_COORDINATE_CONTROL ||
       index >= AppConfig::WORK_COORDINATE_COUNT ||
       !canSendMarlinCommand()) {
-    showCncUnavailable(returnState);
-    return;
+    return false;
   }
 
   // G28 mereset position_shift tetapi Marlin dapat tetap mengingat indeks workspace.
@@ -627,9 +622,37 @@ void AppController::selectWorkspace(uint8_t index, UiState returnState) {
   _softEndstopLoaded = true;
   _lastM211Request = millis();
   _lastMarlinStatusPoll = _lastM211Request;
+  return true;
+}
 
-  if (_displayEnabled && returnState == UiState::Menu) {
-    _menu.showMenu("WORK ORIGIN", workOriginItems(), index);
+void AppController::beginWorkspaceOriginUpdate(uint8_t index) {
+  if (index >= AppConfig::WORK_COORDINATE_COUNT) {
+    showInfoScreen("WORK ORIGIN", "Workspace tidak valid");
+    return;
+  }
+
+  if (_job.isActive()) {
+    showJobControlMessage("Job sedang aktif");
+    return;
+  }
+
+  if (!_homeCycleIssued) {
+    showInfoScreen("WORK ORIGIN", "Home All dulu");
+    return;
+  }
+
+  if (!activateWorkspace(index)) {
+    showCncUnavailable(UiState::Menu);
+    return;
+  }
+
+  enterSetOrigin();
+}
+
+void AppController::selectWorkspace(uint8_t index, UiState returnState) {
+  if (!activateWorkspace(index)) {
+    showCncUnavailable(returnState);
+    return;
   }
 
   String message = String(workspaceCode(index)) + " aktif";
@@ -3439,11 +3462,11 @@ void AppController::onButtonPressed(uint8_t buttonNumber) {
 
   if (_uiState == UiState::SetOrigin) {
     if (buttonNumber == (uint8_t)PinConfig::BTN7) {
-      String message = String("Simpan origin ") + workspaceCode(_activeWorkspaceIndex) + "?";
+      String title = String(workspaceCode(_activeWorkspaceIndex)) + " ORIGIN";
       showActionConfirm(
         PendingAction::SetOrigin,
-        "CONFIRM ORIGIN",
-        message.c_str()
+        title.c_str(),
+        "Perbarui origin?"
       );
       return;
     }
@@ -3702,30 +3725,22 @@ void AppController::processSelectAction() {
       return;
     }
 
-    if (choice == "Set/Save Origin") {
-      if (_job.isActive()) {
-        showJobControlMessage("Job sedang aktif");
-        return;
-      }
-      if (!_homeCycleIssued) {
-        showInfoScreen("SET ORIGIN", "Home All dulu");
-        return;
-      }
-      if (!_workspaceSelected) {
-        showInfoScreen("SET ORIGIN", "Pilih G54-G59.3");
-        return;
-      }
-      enterSetOrigin();
+    if (choice == "Pilih Origin") {
+      requestWorkspaceSelection(_pendingWorkspaceIndex);
       return;
     }
 
-    if (choice.startsWith("Use G")) {
-      for (uint8_t index = 0; index < AppConfig::WORK_COORDINATE_COUNT; ++index) {
-        String prefix = String("Use ") + workspaceCode(index);
-        if (choice == prefix || choice == prefix + " *") {
-          requestWorkspaceSelection(index);
-          return;
-        }
+    if (choice == "Perbarui Origin") {
+      beginWorkspaceOriginUpdate(_pendingWorkspaceIndex);
+      return;
+    }
+
+    for (uint8_t index = 0; index < AppConfig::WORK_COORDINATE_COUNT; ++index) {
+      if (choice == workspaceCode(index)) {
+        _pendingWorkspaceIndex = index;
+        String title = String(workspaceCode(index)) + " ORIGIN";
+        showSubMenu(title.c_str(), {"Pilih Origin", "Perbarui Origin"});
+        return;
       }
     }
 

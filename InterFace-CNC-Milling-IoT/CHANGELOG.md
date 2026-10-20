@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-21
+
+- Mengubah Work Origin menjadi menu dua tingkat: pilih slot `G54`-`G59.3`, lalu pilih `Pilih Origin` atau `Perbarui Origin`.
+- Menjaga pola dialog seragam: Enter=Yes, Back=No, rotary memindahkan pilihan, dan klik rotary mengeksekusi pilihan yang disorot; default dialog tetap No.
+- Memastikan `Perbarui Origin` belum menimpa workspace sebelum operator menyetujui konfirmasi penyimpanan.
+- Menampilkan kode workspace pada judul konfirmasi pembaruan, misalnya `G54 ORIGIN`, dengan pesan ringkas `Perbarui origin?` agar tidak terpotong pada LCD.
+- Menambahkan `examples/gcode/CEK_ORIGIN_XY.gcode` untuk pemeriksaan origin aktif tanpa menurunkan Z, dengan feedrate konservatif, jeda inspeksi 10 detik, dan Home All setelah pemeriksaan.
+
 ## 2026-10-20
 
 - Mengubah fallback area kerja X pada interface dari `1300` menjadi `1250` mm agar konsisten dengan batas kerja Marlin terbaru.

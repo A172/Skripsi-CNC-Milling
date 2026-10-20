@@ -48,7 +48,9 @@ Marlin sekarang mengaktifkan `CNC_COORDINATE_SYSTEMS` dan `EEPROM_SETTINGS`. Ori
 
 Workspace yang dipilih melalui interface dipublish ke Node-RED pada topic retained `cnc/machine` sebagai `work_origin` dan `work_origin_valid`. Dashboard harus menampilkan nilai seperti `G54` hanya ketika flag valid bernilai `true`; setelah status origin diinvalidasi nilainya menjadi `NONE`.
 
-Workflow operator dapat dilakukan dengan urutan `Home All -> Use G54-G59.3 -> Select Job -> Start`. Pemilihan file hanya membaca/menganalisis G-code dan tidak lagi membatalkan status Home atau Work Origin karena tidak menyebabkan gerakan mesin.
+Workflow operator dapat dilakukan dengan urutan `Home All -> pilih G54-G59.3 -> Pilih Origin -> Select Job -> Start`. Setiap slot Work Origin juga menyediakan `Perbarui Origin`, yang baru menyimpan `G92` dan `M500` setelah konfirmasi akhir. Pemilihan file hanya membaca/menganalisis G-code dan tidak membatalkan status Home atau Work Origin karena tidak menyebabkan gerakan mesin.
+
+File siap salin `InterFace-CNC-Milling-IoT/examples/gcode/CEK_ORIGIN_XY.gcode` disediakan untuk memeriksa `X0 Y0` origin aktif. Jalankan hanya tanpa mata pahat: file mempertahankan Z di home, bergerak ke origin dengan feedrate rendah, menunggu 10 detik, lalu menjalankan Home All.
 
 ## Post-processor Fusion 360
 

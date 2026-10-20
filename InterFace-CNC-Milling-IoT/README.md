@@ -70,8 +70,8 @@ ESP32-S3 CNC Interface
 - Browser SD card untuk memilih file job.
 - Tampilan job terpilih dan estimasi waktu di standby.
 - Menu Work Origin untuk memilih sembilan workspace Marlin `G54`-`G59.3` dan menandai workspace aktif.
-- Menu Set/Save Origin dengan jog X/Y/Z, `G92 X0 Y0 Z0`, dan `M500` untuk menyimpan offset workspace aktif ke EEPROM/flash Marlin.
-- Soft endstop Marlin dapat diaktifkan setelah Set Origin dengan `M211 S1`.
+- Submenu `Perbarui Origin` dengan jog X/Y/Z, `G92 X0 Y0 Z0`, dan `M500` untuk menyimpan offset workspace aktif ke EEPROM/flash Marlin.
+- Soft endstop Marlin dapat diaktifkan setelah pembaruan origin dengan `M211 S1`.
 - Menu Machine Ctrl&Status untuk status alarm, test buzzer, spindle, feedrate, area kerja, soft endstop, dan sensor homing.
 - Menu Network untuk WiFi, MQTT, broker, AP setup, waktu singkat, tanggal lengkap, status sinkronisasi, dan reset WiFi.
 - WiFiManager untuk konfigurasi WiFi dan parameter MQTT lokal.
@@ -172,11 +172,14 @@ Submenu ini mengikuti urutan persiapan bidang kerja:
 
 `Home All (G28)` membuka dialog konfirmasi sebelum mengirim `G28`. Perintah hanya dikirim jika komunikasi CNC berstatus `CONNECTED` dan fitur Home aktif. Home All menggerakkan mesin menuju sensor home dan tidak menetapkan origin material.
 
-### Work Origin dan Set/Save Origin
+### Work Origin
 
-Menu Work Origin menyediakan sembilan slot workspace: `G54`, `G55`, `G56`, `G57`, `G58`, `G59`, `G59.1`, `G59.2`, dan `G59.3`. Memilih `Use G54` dan seterusnya hanya mengaktifkan offset yang sudah tersimpan; perintah ini tidak menggerakkan spindle. Pemilihan workspace hanya diizinkan setelah `Home All`.
+Menu Work Origin menyediakan sembilan slot workspace: `G54`, `G55`, `G56`, `G57`, `G58`, `G59`, `G59.1`, `G59.2`, dan `G59.3`. Setiap slot membuka submenu `Pilih Origin` dan `Perbarui Origin`.
 
-Item `Set/Save Origin` menampilkan koordinat X/Y/Z dan memungkinkan user mengatur posisi spindle sebelum menyimpan origin material ke slot aktif. Slot aktif ditandai `*` pada daftar.
+- `Pilih Origin` membuka konfirmasi `Gunakan G54?` dan hanya mengaktifkan offset tersimpan tanpa menggerakkan spindle.
+- `Perbarui Origin` mengaktifkan slot tersebut lalu membuka layar jog untuk menetapkan dan menyimpan ulang origin.
+
+Pemilihan maupun pembaruan workspace hanya diizinkan setelah `Home All`. Membuka layar `Perbarui Origin` belum menimpa data. Penyimpanan baru terjadi ketika operator menekan Enter dan menyetujui dialog bertajuk workspace aktif, misalnya `G54 ORIGIN`, dengan pesan `Perbarui origin?`.
 
 Kontrol yang digunakan:
 
@@ -196,9 +199,11 @@ M500
 M211 S1
 ```
 
-`G92` memperbarui offset slot workspace aktif, lalu `M500` menyimpan tabel `G54`-`G59.3` secara permanen pada Marlin. `M211 S1` dikirim jika fitur soft endstop setelah Set Origin aktif di konfigurasi. Penyimpanan hanya dilakukan ketika job tidak aktif.
+`G92` memperbarui offset slot workspace aktif, lalu `M500` menyimpan tabel `G54`-`G59.3` secara permanen pada Marlin. `M211 S1` dikirim jika fitur soft endstop setelah pembaruan origin aktif di konfigurasi. Penyimpanan hanya dilakukan ketika job tidak aktif.
 
-Setelah mesin dinyalakan ulang atau setelah `G28`, jalankan `Home All`, lalu pilih lagi slot yang sama, misalnya `Use G54`. Interface mengirim `G53` lalu `G54` agar offset tersimpan dimuat ulang dengan pasti. Jika posisi fixture atau panjang tool berubah, periksa dan simpan ulang origin sebelum menjalankan job.
+Setelah mesin dinyalakan ulang atau setelah `G28`, jalankan `Home All`, buka slot yang sama, lalu pilih `Pilih Origin`. Interface mengirim `G53` lalu `G54` agar offset tersimpan dimuat ulang dengan pasti. Jika posisi fixture atau panjang tool berubah, gunakan `Perbarui Origin` sebelum menjalankan job.
+
+Semua dialog konfirmasi mengikuti aturan UI yang sama: tombol Enter menjalankan `Yes`, tombol Back menjalankan `No`, putaran rotary memindahkan kursor `Yes/No`, dan klik rotary menjalankan pilihan yang sedang disorot. Pilihan awal tetap `No` sebagai kondisi aman.
 
 ### Select Job
 
@@ -217,12 +222,14 @@ Job aktif ditampilkan kembali di standby screen sebagai `Job: nama_file`.
 Setelah file dipilih, firmware menganalisis G-code secara bertahap agar tombol, LCD, MQTT, dan UART tetap responsif. Workflow menjalankan job:
 
 1. Jalankan `Home All`.
-2. Pilih workspace tersimpan, misalnya `Use G54`, atau gunakan `Set/Save Origin` untuk membuat origin baru.
+2. Buka slot workspace, misalnya `G54`, lalu gunakan `Pilih Origin` atau `Perbarui Origin`.
 3. Pilih file melalui `Select Job`.
 4. Tunggu status job `READY` dan estimasi selesai dihitung.
 5. Tahan tombol `X+ / PLAY` selama 1 detik, lalu konfirmasi Start.
 
-Pemilihan file hanya membaca dan menganalisis G-code sehingga tidak membatalkan status Home maupun Work Origin. Dengan demikian operator dapat memakai urutan `Home All -> Use G54 -> Select Job -> Start`. Interlock tetap dihapus setelah homing ulang, job selesai, controlled stop, error, SD dilepas, reset, atau koneksi Marlin terputus.
+Pemilihan file hanya membaca dan menganalisis G-code sehingga tidak membatalkan status Home maupun Work Origin. Dengan demikian operator dapat memakai urutan `Home All -> G54 -> Pilih Origin -> Select Job -> Start`. Interlock tetap dihapus setelah homing ulang, job selesai, controlled stop, error, SD dilepas, reset, atau koneksi Marlin terputus.
+
+Untuk memeriksa apakah origin tersimpan menunjuk lokasi yang benar, salin `examples/gcode/CEK_ORIGIN_XY.gcode` ke MicroSD. Jalankan hanya tanpa mata pahat dan tanpa benda yang menghalangi lintasan. File tidak memilih atau mengubah workspace: operator tetap harus menjalankan `Home All`, memilih slot melalui `Pilih Origin`, memilih file cek, lalu Start. Program mematikan spindle, mempertahankan Z di posisi home, bergerak pelan ke `X0 Y0` origin aktif, menunggu 10 detik untuk pemeriksaan visual, lalu menjalankan `G28` dan `M5`.
 
 Kontrol job saat berjalan:
 
