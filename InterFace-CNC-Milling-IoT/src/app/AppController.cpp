@@ -2674,12 +2674,30 @@ void AppController::executeConfirmedAction() {
     }
 
     if (AppConfig::ENABLE_HOME_CONTROL) {
+      const bool restoreWorkspace =
+        AppConfig::ENABLE_WORKSPACE_SESSION_RESTORE &&
+        _workspaceSelected &&
+        _originConfigured;
+      const uint8_t workspaceIndex = _activeWorkspaceIndex;
+
       Serial1.println("G28");
       _homeCycleIssued = true;
-      invalidateWorkOrigin();
+      if (restoreWorkspace) {
+        // M400 di activateWorkspace menunggu G28 selesai sebelum offset dimuat ulang.
+        if (!activateWorkspace(workspaceIndex)) {
+          _homeCycleIssued = false;
+          invalidateWorkOrigin();
+        }
+      } else {
+        invalidateWorkOrigin();
+      }
+
+      String message = restoreWorkspace && _workspaceSelected
+        ? String("G28 + ") + workspaceCode(workspaceIndex)
+        : "G28 dikirim";
       showInfoScreen(
         "HOME ALL",
-        "G28 dikirim",
+        message.c_str(),
         returnState,
         AppConfig::CONFIRM_RESULT_MESSAGE_MS
       );
@@ -2939,10 +2957,25 @@ void AppController::begin() {
 }
 
 void AppController::notifyJobFinished() {
-  // Footer safe park melakukan G28. Setelah homing, workspace harus dipilih ulang
-  // sebelum job berikutnya agar offset G54-G59.3 dimuat kembali secara eksplisit.
-  _homeCycleIssued = false;
-  invalidateWorkOrigin();
+  const bool restoreWorkspace =
+    AppConfig::ENABLE_WORKSPACE_SESSION_RESTORE &&
+    _workspaceSelected &&
+    _originConfigured &&
+    canSendMarlinCommand();
+  const uint8_t workspaceIndex = _activeWorkspaceIndex;
+
+  if (restoreWorkspace) {
+    // Footer normal melakukan G28. Muat ulang offset yang terhapus oleh homing
+    // agar Repeat Job dapat digunakan tanpa memilih workspace untuk kedua kali.
+    _homeCycleIssued = true;
+    if (!activateWorkspace(workspaceIndex)) {
+      _homeCycleIssued = false;
+      invalidateWorkOrigin();
+    }
+  } else {
+    _homeCycleIssued = false;
+    invalidateWorkOrigin();
+  }
 
   if (_selectedJobSource != JobSource::SdCard || !_sdCard.hasSelectedJobFile()) {
     if (AppConfig::ENABLE_BUZZER_NOTIFICATION) {
@@ -2960,9 +2993,12 @@ void AppController::notifyJobFinished() {
   if (AppConfig::ENABLE_BUZZER_NOTIFICATION) {
     _buzzer.play(BuzzerHandler::Cue::JobFinished);
   }
+  String finishMessage = restoreWorkspace && _workspaceSelected
+    ? String(workspaceCode(workspaceIndex)) + " tetap aktif"
+    : "Home + pilih origin";
   showInfoScreen(
     "JOB SELESAI",
-    "Home + pilih G54",
+    finishMessage.c_str(),
     UiState::Standby,
     AppConfig::CONFIRM_RESULT_MESSAGE_MS
   );

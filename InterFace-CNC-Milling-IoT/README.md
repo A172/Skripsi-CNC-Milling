@@ -227,7 +227,7 @@ Setelah file dipilih, firmware menganalisis G-code secara bertahap agar tombol, 
 4. Tunggu status job `READY` dan estimasi selesai dihitung.
 5. Tahan tombol `X+ / PLAY` selama 1 detik, lalu konfirmasi Start.
 
-Pemilihan file hanya membaca dan menganalisis G-code sehingga tidak membatalkan status Home maupun Work Origin. Dengan demikian operator dapat memakai urutan `Home All -> G54 -> Pilih Origin -> Select Job -> Start`. Interlock tetap dihapus setelah homing ulang, job selesai, controlled stop, error, SD dilepas, reset, atau koneksi Marlin terputus.
+Pemilihan file hanya membaca dan menganalisis G-code sehingga tidak membatalkan status Home maupun Work Origin. Dengan demikian operator dapat memakai urutan `Home All -> G54 -> Pilih Origin -> Select Job -> Start`. Selama interface dan Marlin tetap menyala, `Home All` berikutnya serta penyelesaian job normal memuat ulang workspace terakhir secara otomatis melalui `G53` lalu G54-G59.3. Controlled stop, error, SD dilepas, reset, power-cycle, atau koneksi Marlin terputus tetap membatalkan status origin dan mewajibkan pemilihan ulang.
 
 Untuk memeriksa apakah origin tersimpan menunjuk lokasi yang benar, salin `examples/gcode/CEK_ORIGIN_XY.gcode` ke MicroSD. Jalankan hanya tanpa mata pahat dan tanpa benda yang menghalangi lintasan. File tidak memilih atau mengubah workspace: operator tetap harus menjalankan `Home All`, memilih slot melalui `Pilih Origin`, memilih file cek, lalu Start. Program mematikan spindle, mempertahankan Z di posisi home, bergerak pelan ke `X0 Y0` origin aktif, menunggu 10 detik untuk pemeriksaan visual, lalu menjalankan `G28` dan `M5`.
 
@@ -437,7 +437,7 @@ Status sensor home/endstop dikirim pada `cnc/machine` melalui field kompatibel l
 
 Area kerja mesin dikirim pada `cnc/machine` melalui field kompatibel `area_x`, `area_y`, `area_z`, dan `area_source`, serta field terstruktur `work_area`. Nilai `area_source`/`work_area.source` bernilai `fallback` jika berasal dari konfigurasi lokal interface dan berubah menjadi `marlin` setelah geometry report `M115` berhasil diparse.
 
-Work Origin aktif dikirim melalui `work_origin`, misalnya `G54`, dan `work_origin_valid`. Nilai valid hanya `true` setelah Home All selesai diperintahkan dan workspace dipilih melalui interface. Setelah `G28`, reset, job selesai, stop, error, SD dilepas, atau koneksi Marlin terputus, interface mengirim `work_origin:"NONE"` dan `work_origin_valid:false`. Perubahan workspace yang dikirim dari software lain seperti Repetier Host tidak dapat diketahui interface sampai workspace dipilih ulang dari menu interface.
+Work Origin aktif dikirim melalui `work_origin`, misalnya `G54`, dan `work_origin_valid`. Nilai valid hanya `true` setelah Home All selesai diperintahkan dan workspace dipilih melalui interface. Selama sesi mesin yang sama, Home All dan penyelesaian job normal memuat ulang workspace terakhir sehingga nilai tetap valid. Setelah reset/power-cycle, controlled stop, error, SD dilepas, atau koneksi Marlin terputus, interface mengirim `work_origin:"NONE"` dan `work_origin_valid:false`. Perubahan workspace yang dikirim dari software lain seperti Repetier Host tidak dapat diketahui interface sampai workspace dipilih ulang dari menu interface.
 
 Contoh `cnc/machine` saat sensor sudah terbaca sebagian:
 

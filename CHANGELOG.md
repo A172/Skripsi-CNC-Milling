@@ -24,6 +24,7 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 ### Changed
 
+- Mempertahankan workspace terakhir setelah Home All dan job selesai normal selama mesin tetap menyala, sehingga Repeat Job tidak perlu memilih origin ulang.
 - Mengubah Work Origin menjadi submenu per slot dengan pilihan `Pilih Origin` dan `Perbarui Origin`, menggunakan pola konfirmasi input yang konsisten dengan menu lain.
 - Menampilkan kode workspace pada judul dialog pembaruan origin agar pesan konfirmasi tetap terbaca utuh pada LCD.
 - Mengubah default post-processor `Job: Zero Starting Location (G92)` menjadi `false` agar workspace terpilih tidak ditimpa saat job dimulai.

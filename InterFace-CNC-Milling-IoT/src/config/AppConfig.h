@@ -21,6 +21,9 @@ namespace AppConfig {
   // G54-G59.3 dipilih dari interface dan disimpan permanen oleh Marlin melalui M500.
   constexpr bool ENABLE_WORK_COORDINATE_CONTROL = true;
   constexpr uint8_t WORK_COORDINATE_COUNT = 9;
+  // Selama ESP32 tetap menyala, muat ulang workspace terakhir setelah G28/job selesai.
+  // Boot, reset, stop, error, dan koneksi Marlin terputus tetap meminta pemilihan ulang.
+  constexpr bool ENABLE_WORKSPACE_SESSION_RESTORE = true;
   // Setelah G92 disimpan, aktifkan soft endstop agar job berjalan dalam batas mesin.
   constexpr bool ENABLE_SOFT_ENDSTOP_ON_SET_ORIGIN = true;
   constexpr bool ENABLE_HOME_CONTROL = true;

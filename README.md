@@ -44,11 +44,11 @@ Pengujian travel tanpa beban pemotongan mencapai F15000 pada X, F21000 pada Y, d
 
 Feedrate homing menggunakan X/Y `3000` mm/menit dan Z `600` mm/menit. Pendekatan kedua setelah bump dibagi empat menjadi X/Y `750` mm/menit dan Z `150` mm/menit agar pemicuan sensor tetap lebih pelan. Konfigurasi ini tidak memakai batas travel maksimum sebagai kecepatan homing dan masih memerlukan validasi langsung pada hardware.
 
-Marlin sekarang mengaktifkan `CNC_COORDINATE_SYSTEMS` dan `EEPROM_SETTINGS`. Origin benda kerja dapat disimpan pada sembilan slot `G54`-`G59.3` melalui workflow interface: Home All, pilih workspace, jog ke nol benda kerja, lalu Set/Save Origin. Interface mengirim `G92 X0 Y0 Z0` dan `M500`. Setelah power-cycle atau `G28`, lakukan Home All dan pilih ulang slot yang sama; memilih workspace tidak menyebabkan gerakan mesin.
+Marlin sekarang mengaktifkan `CNC_COORDINATE_SYSTEMS` dan `EEPROM_SETTINGS`. Origin benda kerja dapat disimpan pada sembilan slot `G54`-`G59.3` melalui workflow interface: Home All, pilih workspace, jog ke nol benda kerja, lalu Set/Save Origin. Interface mengirim `G92 X0 Y0 Z0` dan `M500`. Setelah power-cycle, lakukan Home All dan pilih ulang slot yang sama. Selama sesi mesin masih menyala, Home All berikutnya dan job selesai normal memuat ulang workspace terakhir secara otomatis.
 
 Workspace yang dipilih melalui interface dipublish ke Node-RED pada topic retained `cnc/machine` sebagai `work_origin` dan `work_origin_valid`. Dashboard harus menampilkan nilai seperti `G54` hanya ketika flag valid bernilai `true`; setelah status origin diinvalidasi nilainya menjadi `NONE`.
 
-Workflow operator dapat dilakukan dengan urutan `Home All -> pilih G54-G59.3 -> Pilih Origin -> Select Job -> Start`. Setiap slot Work Origin juga menyediakan `Perbarui Origin`, yang baru menyimpan `G92` dan `M500` setelah konfirmasi akhir. Pemilihan file hanya membaca/menganalisis G-code dan tidak membatalkan status Home atau Work Origin karena tidak menyebabkan gerakan mesin.
+Workflow operator dapat dilakukan dengan urutan `Home All -> pilih G54-G59.3 -> Pilih Origin -> Select Job -> Start`. Setiap slot Work Origin juga menyediakan `Perbarui Origin`, yang baru menyimpan `G92` dan `M500` setelah konfirmasi akhir. Setelah job selesai normal, Repeat Job dapat dipilih tanpa memilih origin ulang karena interface memuat ulang workspace terakhir. Stop/error/reset/disconnect tetap mewajibkan Home All dan pemilihan origin ulang.
 
 File siap salin `InterFace-CNC-Milling-IoT/examples/gcode/CEK_ORIGIN_XY.gcode` disediakan untuk memeriksa `X0 Y0` origin aktif. Jalankan hanya tanpa mata pahat: file mempertahankan Z di home, bergerak ke origin dengan feedrate rendah, menunggu 10 detik, lalu menjalankan Home All.
 
