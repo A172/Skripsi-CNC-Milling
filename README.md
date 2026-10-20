@@ -50,6 +50,8 @@ Petunjuk pemasangan dan penggunaan tersedia pada `mpcnc_post_processor-master/RE
 
 Post-processor Marlin untuk job milling sekarang menambahkan parkir otomatis hanya pada penyelesaian normal. Footer menunggu planner selesai, memastikan spindle OFF, menjalankan `G28` dengan Z lebih dahulu, lalu bergerak ke posisi parkir yang sudah divalidasi pada hardware: X `1250`, Y `100`, Z `-20`. Gerakan masuk parkir memakai XY `3000` mm/menit dan Z `600` mm/menit. Jika kontrol spindle manual aktif, terdapat konfirmasi operator setelah `M5` sebelum homing dimulai. Fitur dapat dinonaktifkan melalui properti `Job: Safe park on finish` dan tidak dijalankan pada emergency stop, job yang dibatalkan, laser/jet, firmware non-Marlin, atau saat `Extern: Stop File` digunakan.
 
+Area kerja X pada Marlin dibatasi menjadi `0..1250 mm`. Karena homing X menggunakan endstop X-Max, `G28 X` menetapkan posisi X menjadi `1250`; target di bawah `0` atau di atas `1250` ditolak oleh soft endstop setelah homing. Posisi parkir X `1250` sekarang tepat berada di X-Max, sehingga langkah parkir setelah `G28` mempertahankan X di posisi home dan melanjutkan ke Y `100`, lalu Z `-20`.
+
 ## Keselamatan
 
 - Pemilihan file atau upload G-code tidak boleh otomatis menjalankan mesin.

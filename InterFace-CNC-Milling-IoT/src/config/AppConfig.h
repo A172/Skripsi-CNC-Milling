@@ -82,7 +82,7 @@ namespace AppConfig {
   constexpr unsigned int MACHINE_WORK_AREA_MIN_MM = 1;
   constexpr unsigned int MACHINE_WORK_AREA_MAX_MM = 9999;
   // Fallback ukuran area dari konfigurasi Marlin saat M115 geometry report belum terbaca.
-  constexpr unsigned int MACHINE_WORK_AREA_DEFAULT_X_MM = 1300;
+  constexpr unsigned int MACHINE_WORK_AREA_DEFAULT_X_MM = 1250;
   constexpr unsigned int MACHINE_WORK_AREA_DEFAULT_Y_MM = 2600;
   constexpr unsigned int MACHINE_WORK_AREA_DEFAULT_Z_MM = 140;
   constexpr unsigned long MACHINE_STATUS_POLL_MS = 1000;

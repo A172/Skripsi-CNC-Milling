@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-20
+
+- Mengubah fallback area kerja X pada interface dari `1300` menjadi `1250` mm agar konsisten dengan batas kerja Marlin terbaru.
+- Memperbarui contoh payload MQTT area kerja menjadi X `1250`, Y `2600`, dan Z `140` mm.
+
 ## 2026-08-22
 
 - Mengaktifkan log diagnostik UART Marlin `[MARLIN][TX]` dan `[MARLIN][RX]` untuk mengecek respons `M203`, `M115`, `M119`, `M211`, dan polling `M114`.

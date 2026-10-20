@@ -24,7 +24,7 @@ Koneksi Marlin sekarang diaktifkan untuk uji awal hardware SKR. Mapping UART int
 
 Saat MicroSD memang dilepas untuk pengujian Marlin, retry mount otomatis diperlambat menjadi 30 detik dan build ESP32 memakai `CORE_DEBUG_LEVEL=0` agar log internal Arduino core seperti `sd_diskio.cpp` tidak memenuhi Serial Monitor.
 
-Area X/Y/Z sekarang memiliki fallback lokal 1300/2600/140 mm sejak koneksi Marlin diaktifkan agar LCD dan dashboard tidak kosong setelah boot. Firmware tetap meminta `M115` dan mengganti fallback jika data runtime Marlin berhasil diparse.
+Area X/Y/Z sekarang memiliki fallback lokal 1250/2600/140 mm sejak koneksi Marlin diaktifkan agar LCD dan dashboard tidak kosong setelah boot. Firmware tetap meminta `M115` dan mengganti fallback jika data runtime Marlin berhasil diparse. Nilai X diselaraskan dengan batas kerja Marlin terbaru `0..1250 mm`.
 
 Area kerja mesin juga dikirim ke dashboard melalui payload retained `cnc/machine` sebagai `area_x`, `area_y`, `area_z`, `area_source`, dan objek `work_area` agar panel Data Mesin Node-RED dapat menampilkan Area X/Y/Z tanpa membaca LCD.
 

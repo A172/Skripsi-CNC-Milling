@@ -18,6 +18,7 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 - `SPINDLE_LASER_ACTIVE_STATE` diset `HIGH`.
 - PWM spindle tidak diaktifkan; output dipakai sebagai sinyal ON/OFF untuk relay atau modul kontrol spindle.
 - Mengaktifkan `M115_GEOMETRY_REPORT` agar AYB Interface dapat membaca area kerja mesin melalui command `M115`.
+- Area kerja X dibatasi menjadi `0..1250 mm` melalui `X_BED_SIZE 1250`; soft endstop akan menolak target X di bawah `0` atau di atas `1250` setelah posisi mesin diketahui melalui homing.
 - Konfigurasi ini disiapkan untuk integrasi monitoring dari interface, termasuk pembacaan feedrate, area kerja, soft endstop, dan sensor homing.
 - Arah motor Z memakai `INVERT_Z_DIR true` agar arah koordinat positif Z bergerak naik menuju proximity pada Z-Max sesuai hasil uji hardware: perintah Z negatif sebelumnya justru menggerakkan spindle naik.
 - `HOME_Z_FIRST` aktif dan `Z_SAFE_HOMING` nonaktif karena Z memakai proximity Z-Max sebagai endstop nyata. Pada `G28` penuh, Z harus homing ke atas sebelum X dan Y bergerak untuk memberi jarak aman terhadap rangka mesin.
@@ -28,6 +29,8 @@ Konfigurasi ini adalah firmware Marlin untuk mesin CNC milling berbasis BTT SKR 
 Status proximity Z-Max wajib menunjukkan `open` saat bebas dan `TRIGGERED` saat mendeteksi logam melalui `M119`. Setelah firmware baru dipasang, lakukan jog Z jarak kecil dari tengah lintasan: Z negatif harus turun dan Z positif harus naik. Jalankan `G28 Z` hanya setelah arah jog benar, kemudian uji `G28` penuh tanpa tool dan benda kerja. Perintah `G28 X` atau `G28 Y` saja tidak menjalankan homing Z terlebih dahulu.
 
 Kecepatan homing baru sudah diuji pada hardware. Z bergerak naik lebih cepat dan halus, proximity menghentikan homing dengan benar, pendekatan kedua berjalan lebih lambat, dan `G28` penuh tetap menyelesaikan Z sebelum X/Y. Tetap siapkan emergency stop dan hentikan mesin jika sensor terlambat memicu, sumbu melewati sensor, terjadi benturan, atau motor kehilangan langkah.
+
+Setelah firmware dengan batas X baru dipasang, `G28 X` harus berakhir pada koordinat `X1250` (bukan lagi `X1300`). Validasi perubahan ini tanpa tool dan benda kerja, lalu uji gerakan secara bertahap dari dekat X-Max sebelum mencoba perjalanan panjang menuju `X0`.
 
 `HOME_Z_FIRST` hanya mengatur urutan saat command homing dijalankan. Fitur ini tidak otomatis menaikkan Z atau memarkir spindle setelah pekerjaan selesai; workflow akhir pekerjaan harus diatur terpisah dan wajib mematikan spindle sebelum gerakan parkir.
 

@@ -19,6 +19,8 @@ Semua perubahan penting pada repository gabungan didokumentasikan pada file ini.
 
 ### Changed
 
+- Mengubah batas area kerja X Marlin dari `1300` menjadi `1250` mm dan menyelaraskan fallback area kerja interface menjadi X/Y/Z `1250/2600/140` mm.
+- Mendokumentasikan hasil yang diharapkan setelah flashing: `G28 X` berakhir pada `X1250`, soft endstop membatasi X pada `0..1250`, dan posisi parkir X `1250` berada tepat di X-Max.
 - Mengubah `INVERT_Z_DIR` dari `true` menjadi `false` agar homing Z bergerak naik menuju proximity Z-Max sesuai `Z_HOME_DIR 1`.
 - Menambahkan prosedur validasi `M119`, jog Z jarak kecil, dan pengujian homing aman pada dokumentasi.
 - Mengoreksi `INVERT_Z_DIR` kembali menjadi `true` setelah uji hardware menunjukkan perintah Z negatif justru menggerakkan spindle naik. `Z_HOME_DIR 1` dan input proximity Z-Max tidak diubah.
